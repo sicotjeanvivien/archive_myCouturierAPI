@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Service\MessageGenerator;
+use App\Service\TokenService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,25 +14,31 @@ class SecurityController extends AbstractController
 {
 
     private $em;
+    private $tokenService;
 
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, TokenService $tokenService)
     {
         $this->em = $em;
+        $this->tokenService = $tokenService;
     }
 
     /**
      * @Route("/login_check", name="app_login_check")
      */
-    public function loginCheck(Request $request, MessageGenerator $messageGenerator): Response
+    public function loginCheck(Request $request): Response
     {        
-        dump($request->headers, $request->getContent());
-
+        
+        $token = $this->tokenService->tokenGenerator();
+        
         $user = $this->getUser();
+        $user->setApitoken($token);
+        $this->em->flush();
+        dump($user);
 
         $response = new Response();
         $response->setContent(json_encode([
-            'username' => $user->getUsername(),
-            'message' =>  $messageGenerator ->getHappyMessage()
+            'user' => $user,
+            'token' =>  $user->getApitoken(),
         ]));
         return $response;
     }
