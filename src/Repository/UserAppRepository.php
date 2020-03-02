@@ -36,6 +36,25 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         $this->_em->flush();
     }
 
+    public function countUsername($username, $id)
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT COUNT(a)
+            FROM App\Entity\UserApp a
+            WHERE a.username = :username AND a.id != :id
+        '
+        )->setParameters([
+            'username' => $username,
+            'id' => $id
+        ]);
+
+        // returns an array of Product objects
+        return $query->getSingleScalarResult();
+    }
+}
+
     // /**
     //  * @return UserApp[] Returns an array of UserApp objects
     //  */
@@ -64,4 +83,3 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         ;
     }
     */
-}

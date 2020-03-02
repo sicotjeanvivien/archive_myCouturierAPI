@@ -13,7 +13,7 @@ nelmio_cors:
             '^/api/':
                 allow_origin: ['*']
                 allow_headers: ['X-AUTH-TOKEN', 'Content-Type']
-                allow_methods: ['POST', 'PUT', 'GET', 'DELETE']
+                allow_methods: ['POST', 'PUT', 'PATH', 'GET', 'DELETE']
                 max_age: 3600
             '^/login_check':
                 allow_origin: ['*']

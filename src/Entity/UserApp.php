@@ -7,6 +7,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
+use Symfony\Component\Serializer\Serializer;
+
+
 /**
  * @ORM\Entity(repositoryClass="App\Repository\UserAppRepository")
  */
@@ -16,11 +21,13 @@ class UserApp implements UserInterface
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"group1"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
+     * @Groups({"group1"})
      */
     private $username;
 
@@ -37,31 +44,37 @@ class UserApp implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=255, unique=true, nullable=true)
+     * @Groups({"group1"})
      */
     private $apitoken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"group1"})
      */
     private $firstname;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"group1"})
      */
     private $lastname;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups({"group1"})
      */
     private $email;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\UserPriceRetouching", mappedBy="UserApp")
+     * @MaxDepth(1)
      */
     private $userPriceRetouchings;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Prestations", mappedBy="client")
+     * @MaxDepth(1)
      */
     private $prestations;
 
@@ -252,5 +265,15 @@ class UserApp implements UserInterface
         }
 
         return $this;
+    }
+
+    public function serialize()
+    {
+        return serialize($this->id);
+    }
+
+    public function unserialize($serialized)
+    {
+        $this->id = unserialize($serialized);
     }
 }
