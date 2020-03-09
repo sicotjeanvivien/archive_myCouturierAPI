@@ -78,6 +78,24 @@ class UserApp implements UserInterface
      */
     private $prestations;
 
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @Groups({"group1"})
+     */
+    private $privateMode;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     * @Groups({"group1"})
+     */
+    private $imageProfil;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     * @Groups({"group1"})
+     */
+    private $bio;
+
     public function __construct()
     {
         $this->userPriceRetouchings = new ArrayCollection();
@@ -275,5 +293,41 @@ class UserApp implements UserInterface
     public function unserialize($serialized)
     {
         $this->id = unserialize($serialized);
+    }
+
+    public function getPrivateMode(): ?bool
+    {
+        return $this->privateMode;
+    }
+
+    public function setPrivateMode(?bool $privateMode): self
+    {
+        $this->privateMode = $privateMode;
+
+        return $this;
+    }
+
+    public function getImageProfil(): ?string
+    {
+        return $this->imageProfil;
+    }
+
+    public function setImageProfil(?string $imageProfil): self
+    {
+        $this->imageProfil = $imageProfil;
+
+        return $this;
+    }
+
+    public function getBio(): ?string
+    {
+        return $this->bio;
+    }
+
+    public function setBio(?string $bio): self
+    {
+        $this->bio = $bio;
+
+        return $this;
     }
 }

@@ -34,6 +34,9 @@ class SecurityController extends AbstractController
     public function loginCheck(Request $request): Response
     {
 
+//TODOO response secu et secu et encore secu
+
+        dump($request);
         $token = $this->tokenService->tokenGenerator();
 
         $user = $this->getUser();
@@ -41,6 +44,8 @@ class SecurityController extends AbstractController
 
         $jsonContent = $this->serialazer->serialize($user,'json', ['groups' => 'group1']); 
         $this->em->flush();
+
+        dump($jsonContent);
 
         $response = new Response();
         $response->setContent($jsonContent);

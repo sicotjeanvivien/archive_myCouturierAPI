@@ -41,10 +41,10 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         $entityManager = $this->getEntityManager();
 
         $query = $entityManager->createQuery(
-            'SELECT COUNT(a)
+            "SELECT COUNT(a)
             FROM App\Entity\UserApp a
-            WHERE a.username = :username AND a.id != :id
-        '
+            WHERE (a.username = :username AND a.id != :id) OR (a.username = :username AND a.id != 'null')
+        "
         )->setParameters([
             'username' => $username,
             'id' => $id

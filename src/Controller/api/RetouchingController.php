@@ -46,8 +46,6 @@ class RetouchingController
         $retouching = $this->retouchingRepository->findAll();
         $jsonContent = $this->serializer->serialize($retouching, 'json');
 
-        dump($jsonContent);
-
         $response = new Response;
         $response
             ->setContent($jsonContent)

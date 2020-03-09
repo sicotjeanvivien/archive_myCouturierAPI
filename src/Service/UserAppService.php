@@ -13,12 +13,14 @@ class UserAppService
 
     public function validateDataAccount($data)
     {
+
+        
         $error = [
             'error' => false,
-            'message' => 'Erreur:',
+            'message' => '',
         ];
-
-        $id = ltrim($data['id']);
+        
+        $id = empty($data['id'])? null:ltrim($data['id']);
         $firstname = ltrim($data['firstname']);
         $lastname = ltrim($data['lastname']);
         $username = ltrim($data['username']);
@@ -26,25 +28,25 @@ class UserAppService
 
         if (empty($firstname)) {
             $error['error'] = true;
-            $error['message'] = $error['message'] . ' prénom non valide';
+            $error['message'] = $error['message'] . 'prénom non valide';
         }
         if (
             empty($username)
             || $this->userAppRepository->countUsername($username, $id) > 0
         ) {
             $error['error'] = true;
-            $error['message'] = $error['message'] . ', username non valide';
+            $error['message'] = $error['message'] . ' username non valide';
         }
         if (empty($lastname)) {
             $error['error'] = true;
-            $error['message'] = $error['message'] . ', nom non valide';
+            $error['message'] = $error['message'] . ' nom non valide';
         }
         if (
             empty($email)
             || stristr($email, '@') === FALSE
         ) {
             $error['error'] = true;
-            $error['message'] = $error['message'] . ', email non valide';
+            $error['message'] = $error['message'] . ' email non valide';
         }
 
         return $error;
@@ -54,7 +56,7 @@ class UserAppService
     {
         $error = [
             'error' => false,
-            'message' => 'Erreur:',
+            'message' => '',
         ];
         $password = ltrim($data['password']);
         $passwordConfirm = ltrim($data['passwordConfirm']);
@@ -63,10 +65,10 @@ class UserAppService
             $error['message'] = $error['message'] . 'champ vide';
         }
         if ($password !== $passwordConfirm) {
-            $error['message'] = $error['message'] . ', champs non identique';
+            $error['message'] = $error['message'] . ' champs non identique';
         }
         if (strlen($password) < 7) {
-            $error['message'] = $error['message'] . ', nombre de caratères insufissant';
+            $error['message'] = $error['message'] . ' nombre de caratères insufissant';
             
         }
         return $error;

@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Prestations;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManager;
 
 /**
  * @method Prestations|null find($id, $lockMode = null, $lockVersion = null)
@@ -47,4 +48,22 @@ class PrestationsRepository extends ServiceEntityRepository
         ;
     }
     */
+
+
+    public function findlastStatutByUserApp($userapp, $state)
+    {
+        $query = $this->getEntityManager()->createQuery(
+            "SELECT c.id, h.date, s.statut
+            FROM App\Entity\Prestations p
+            JOIN p.prestationHistories h
+            JOIN h.statut s
+            JOIN p.client c
+            WHERE p.state = :state AND c.id = :userapp "
+        )->setParameters([
+            'userapp' => $userapp,
+            'state' => $state
+        ]);
+        dump($query->getSQL());
+        return $query->getResult();
+    }
 }

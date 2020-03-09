@@ -11,6 +11,11 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Prestations
 {
+
+    public const ACTIVE = 'active';
+    public const INACTIVE = 'inactive';
+    public const STANDBY = 'standby';
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -32,6 +37,11 @@ class Prestations
      * @ORM\OneToMany(targetEntity="App\Entity\PrestationHistory", mappedBy="prestation")
      */
     private $prestationHistories;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $state;
 
     public function __construct()
     {
@@ -94,6 +104,18 @@ class Prestations
                 $prestationHistory->setPrestation(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getState(): ?string
+    {
+        return $this->active;
+    }
+
+    public function setState(?string $active): self
+    {
+        $this->active = $active;
 
         return $this;
     }

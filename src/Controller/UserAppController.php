@@ -4,16 +4,13 @@ namespace App\Controller;
 
 use App\Entity\UserApp;
 use App\Repository\UserAppRepository;
+use App\Service\TokenService;
 use App\Service\UserAppService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class UserAppController
@@ -24,50 +21,64 @@ class UserAppController
     private $serializerInterface;
     private $userAppRepository;
     private $userAppService;
+    private $tokenService;
 
     public function __construct(
         EntityManagerInterface $em,
         UserPasswordEncoderInterface $passwordEncoder,
         SerializerInterface $serializerInterface,
         UserAppRepository $userAppRepository,
-        UserAppService $userAppService
+        UserAppService $userAppService,
+        TokenService $tokenService
     ) {
         $this->em = $em;
         $this->passwordEncoder = $passwordEncoder;
         $this->serializerInterface = $serializerInterface;
         $this->userAppRepository = $userAppRepository;
         $this->userAppService = $userAppService;
+        $this->tokenService = $tokenService;
     }
 
     /**
-     * TODOO
      * @Route("/userapp_create", methods={"POST"})
      */
     public function userApp_create(Request $request)
     {
         $response = new Response();
-
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+        ];
+        
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
 
-            if (
-                !empty($data['password'])
-                && !empty($data['passwordConfirm'])
-                && strlen($data['password']) > 7
-                && $data['password'] === $data['passwordConfirm']
-            ) {
-                $user = $this->serializer->deserialize($request->getContent(), UserApp::class, 'json');
-                $user->setPassword($this->passwordEncoder->encodePassword(
-                    $user,
-                    $data['password']
-                ));
+
+            $valideDataAccount = $this->userAppService->validateDataAccount($data);
+            $validePassword = $this->userAppService->validateDataPassword($data);
+
+            if (!$valideDataAccount['error'] && !$validePassword['error']) {
+                $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
+                $user
+                    ->setRoles(['ROLE_USER'])
+                    ->setApitoken($this->tokenService->tokenGenerator())
+                    ->setPrivateMode(false)
+                    ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']))
+                ;
+
                 $this->em->persist($user);
+                // dump($user);
                 $this->em->flush();
+                $jsonContent['error'] = false;
+                $jsonContent['message'] = 'compte créé';
+                $jsonContent['user'] = $this->serializerInterface->serialize($user,'json', ['groups' => 'group1']);
+            }else {
+                $jsonContent['message'] = $valideDataAccount['message'].$validePassword['message'];
             }
-            //TODOO
+            $response->setContent(json_encode($jsonContent));
             return $response;
         } else {
-            $response->headers->set('Content-Type', 'application/json');
-            $response->setContent('Error');
+            $response->setContent(json_encode($jsonContent));
             return  $response;
         }
     }
@@ -80,8 +91,8 @@ class UserAppController
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
         $jsonContent = [
-            'error'=> true,
-            'message'=> 'error server',
+            'error' => true,
+            'message' => 'error server',
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
 
@@ -116,8 +127,8 @@ class UserAppController
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
         $jsonContent = [
-            'error'=> true,
-            'message'=> 'error server',
+            'error' => true,
+            'message' => 'error server',
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
 
@@ -141,5 +152,43 @@ class UserAppController
             $response->setContent(json_encode($jsonContent));
             return  $response;
         }
+    }
+
+    /**
+     * @Route("/api/privateMode", methods="PATH")
+     */
+    public function privateMode(Request $request)
+    {
+        dump($request->getContent());
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+            dump($data);
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+            $userApp->setPrivateMode($data['privateMode']);
+            $this->em->flush();
+
+            $jsonContent['error'] = false;
+            $jsonContent['message'] = $data['privateMode']?'Vous étes en mode privé':"vous n'étes plus en mode privé";
+        }
+        $response->setContent(json_encode($jsonContent));
+        return  $response;
+    }
+
+    /**
+     * @Route("/api/imageProfil", methods="POST")
+     */
+    public function uploadImageProfil(Request $request)
+    {
+        $response = new Response();
+        $userApp =  $this->userAppRepository->findOneBy(['apitoken'=> $request->headers->get('X-AUTH-TOKEN')]);
+        $userApp->setImageProfil(json_decode($request->getContent(), true));
+        $this->em->flush();
+        dump($request->getContent());
+        return $response;
     }
 }
