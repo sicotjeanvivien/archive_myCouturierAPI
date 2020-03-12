@@ -36,7 +36,7 @@ class SecurityController extends AbstractController
         $token = $this->tokenService->tokenGenerator();
 
         $user = $this->getUser();
-        $user->setApitoken($token);
+        $user->setApitoken('$token');
 
         $jsonContent = $this->serialazer->serialize($user,'json', ['groups' => 'group1']); 
         $this->em->flush();
