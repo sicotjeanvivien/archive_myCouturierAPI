@@ -17,7 +17,9 @@ class PrestationsService
 
     public function calculPriceClient($priceCouturier)
     { 
-        $commission = $this->priceGridRepository->findCommission($priceCouturier) === null? PriceGrid::DEFAULTVALUE : $this->priceGridRepository->findCommission($priceCouturier);
+        $resultCommission = $this->priceGridRepository->findCommission($priceCouturier);
+        $commission = $resultCommission === null? PriceGrid::DEFAULTVALUE : $resultCommission['commission'];
+        dump($priceCouturier, $commission);
         $price = $priceCouturier + $commission;
         return $price;
     }
