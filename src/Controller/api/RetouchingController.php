@@ -96,17 +96,18 @@ class RetouchingController
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $userApp
-                ->setActiveCouturier($data['activeCouturier'])
-                ->setBio($data['bio']);
+            ->setActiveCouturier($data['activeCouturier'])
+            ->setBio($data['bio']);
             $jsonContent['error'] = false;
             $jsonContent['message'] = 'information de profil mis à jour';
-
+            
             if ($data['activeCouturier'] === $userApp->getActiveCouturier()) {
                 foreach ($data['retouche'] as $retouche) {
                     if ($retouche['active']) {
                         $retouching = $this->retouchingRepository->findOneBy(['id' => $retouche['id']]);
                         $countUserPriceRetouching = $this->userPriceRetouchingRepository->countUserPriceRetouching($userApp, $retouching);
                         $userPriceRetouching =  $this->userPriceRetouchingRepository->findOneBy(['UserApp' => $userApp, 'Retouching' => $retouching]);
+                        dump($this->prestationsService->calculPriceClient(intval($retouche['value'])));
                         $priceClient = $this->prestationsService->calculPriceClient(intval($retouche['value']));
                         if (intval($countUserPriceRetouching) === 1) {
                             $userPriceRetouching
