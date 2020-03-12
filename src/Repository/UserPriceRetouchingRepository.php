@@ -19,6 +19,39 @@ class UserPriceRetouchingRepository extends ServiceEntityRepository
         parent::__construct($registry, UserPriceRetouching::class);
     }
 
+
+    public function countUserPriceRetouching($userApp, $retouching)
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            "SELECT COUNT(u)
+            FROM App\Entity\UserPriceRetouching u
+            WHERE u.UserApp = :userapp AND u.Retouching = :retouching
+        "
+        )->setParameters([
+            'userapp' => $userApp,
+            'retouching' => $retouching
+        ]);
+        return $query->getSingleScalarResult();
+    }
+
+    public function findOnePrice($retouche, $userApp)
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            "SELECT u.PriceCouturier
+            FROM App\Entity\UserPriceRetouching u
+            WHERE u.UserApp = :userapp AND u.Retouching = :retouching
+        "
+        )->setParameters([
+            'userapp' => $userApp,
+            'retouching' => $retouche
+        ]);
+        return $query->getOneOrNullResult();
+    }
+
     // /**
     //  * @return UserPriceRetouching[] Returns an array of UserPriceRetouching objects
     //  */

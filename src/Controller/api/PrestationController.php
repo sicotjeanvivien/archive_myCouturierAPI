@@ -32,7 +32,6 @@ class PrestationController
      */
     public function prestationsShow(Request $request)
     {
-
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
         $jsonContent = [
@@ -44,11 +43,8 @@ class PrestationController
         $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
         $prestationsINPROGRESS = $this->prestationsRepository->findlastStatutByUserApp($userApp->getId(), Prestations::ACTIVE);
         $prestationsEND = $this->prestationsRepository->findlastStatutByUserApp($userApp->getId(), Prestations::INACTIVE);
-        dump($prestationsINPROGRESS,$prestationsEND);
         $jsonContent['prestationsINPROGRESS'] = $prestationsINPROGRESS;
         $jsonContent['prestationsEND'] = $prestationsEND;
-        
-        dump($jsonContent);
 
         $response->setContent(json_encode($jsonContent));
         return $response;
@@ -65,7 +61,6 @@ class PrestationController
             'error' => true,
             'message' => 'error server',
         ];
-
 
         $response->setContent(json_encode($jsonContent));
         return $response;

@@ -67,7 +67,6 @@ class UserAppController
                 ;
 
                 $this->em->persist($user);
-                // dump($user);
                 $this->em->flush();
                 $jsonContent['error'] = false;
                 $jsonContent['message'] = 'compte créé';
@@ -159,7 +158,6 @@ class UserAppController
      */
     public function privateMode(Request $request)
     {
-        dump($request->getContent());
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
         $jsonContent = [
@@ -167,7 +165,6 @@ class UserAppController
             'message' => 'error server',
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
-            dump($data);
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $userApp->setPrivateMode($data['privateMode']);
             $this->em->flush();
@@ -188,7 +185,6 @@ class UserAppController
         $userApp =  $this->userAppRepository->findOneBy(['apitoken'=> $request->headers->get('X-AUTH-TOKEN')]);
         $userApp->setImageProfil(json_decode($request->getContent(), true));
         $this->em->flush();
-        dump($request->getContent());
         return $response;
     }
 }

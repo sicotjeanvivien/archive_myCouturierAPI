@@ -96,6 +96,11 @@ class UserApp implements UserInterface
      */
     private $bio;
 
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $activeCouturier;
+
     public function __construct()
     {
         $this->userPriceRetouchings = new ArrayCollection();
@@ -327,6 +332,18 @@ class UserApp implements UserInterface
     public function setBio(?string $bio): self
     {
         $this->bio = $bio;
+
+        return $this;
+    }
+
+    public function getActiveCouturier(): ?bool
+    {
+        return $this->activeCouturier;
+    }
+
+    public function setActiveCouturier(?bool $activeCouturier): self
+    {
+        $this->activeCouturier = $activeCouturier;
 
         return $this;
     }

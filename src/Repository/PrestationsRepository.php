@@ -63,7 +63,6 @@ class PrestationsRepository extends ServiceEntityRepository
             'userapp' => $userapp,
             'state' => $state
         ]);
-        dump($query->getSQL());
         return $query->getResult();
     }
 }
