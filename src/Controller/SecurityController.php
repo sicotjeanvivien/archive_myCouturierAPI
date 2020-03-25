@@ -35,6 +35,8 @@ class SecurityController extends AbstractController
     {
         $token = $this->tokenService->tokenGenerator();
 
+
+        
         $user = $this->getUser();
         $user->setApitoken($token);
 

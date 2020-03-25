@@ -20,11 +20,16 @@ class PrestationController
 {
     public $userAppRepository;
     public $prestationsRepository;
+    public $retouchingRepository;
 
-    public function __construct(UserAppRepository $userAppRepository, PrestationsRepository $prestationsRepository)
-    {
+    public function __construct(
+        UserAppRepository $userAppRepository,
+        PrestationsRepository $prestationsRepository,
+        RetouchingRepository $retouchingRepository
+    ) {
         $this->userAppRepository = $userAppRepository;
         $this->prestationsRepository = $prestationsRepository;
+        $this->retouchingRepository = $retouchingRepository;
     }
 
     /**
@@ -65,4 +70,6 @@ class PrestationController
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
+
+   
 }

@@ -72,8 +72,6 @@ class RetouchingController
             ];
         }
         // $jsonContent = $this->serializer->serialize($retouching, 'json');
-        dump($jsonContent);
-
         $response = new Response;
         $response
             ->setContent(json_encode($jsonContent))
@@ -93,7 +91,7 @@ class RetouchingController
             'error' => true,
             'message' => 'error server',
         ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') ==='application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $userApp
             ->setActiveCouturier($data['activeCouturier'])
@@ -107,7 +105,6 @@ class RetouchingController
                         $retouching = $this->retouchingRepository->findOneBy(['id' => $retouche['id']]);
                         $countUserPriceRetouching = $this->userPriceRetouchingRepository->countUserPriceRetouching($userApp, $retouching);
                         $userPriceRetouching =  $this->userPriceRetouchingRepository->findOneBy(['UserApp' => $userApp, 'Retouching' => $retouching]);
-                        dump($this->prestationsService->calculPriceClient(intval($retouche['value'])));
                         $priceClient = $this->prestationsService->calculPriceClient(intval($retouche['value']));
                         if (intval($countUserPriceRetouching) === 1) {
                             $userPriceRetouching
