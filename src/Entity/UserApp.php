@@ -98,8 +98,19 @@ class UserApp implements UserInterface
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
+     * @Groups({"group1"})
      */
     private $activeCouturier;
+
+    /**
+     * @ORM\Column(type="float", nullable=true)
+     */
+    private $longitude;
+
+    /**
+     * @ORM\Column(type="float", nullable=true)
+     */
+    private $latitude;
 
     public function __construct()
     {
@@ -344,6 +355,30 @@ class UserApp implements UserInterface
     public function setActiveCouturier(?bool $activeCouturier): self
     {
         $this->activeCouturier = $activeCouturier;
+
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): self
+    {
+        $this->longitude = $longitude;
+
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): self
+    {
+        $this->latitude = $latitude;
 
         return $this;
     }

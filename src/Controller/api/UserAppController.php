@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\api;
 
 use App\Entity\UserApp;
 use App\Repository\UserAppRepository;
+use App\Repository\UserPriceRetouchingRepository;
 use App\Service\TokenService;
 use App\Service\UserAppService;
 use Doctrine\ORM\EntityManagerInterface;
+use PhpParser\Node\Stmt\Label;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,6 +24,7 @@ class UserAppController
     private $userAppRepository;
     private $userAppService;
     private $tokenService;
+    private $userPriceRetouchingRepository;
 
     public function __construct(
         EntityManagerInterface $em,
@@ -29,7 +32,8 @@ class UserAppController
         SerializerInterface $serializerInterface,
         UserAppRepository $userAppRepository,
         UserAppService $userAppService,
-        TokenService $tokenService
+        TokenService $tokenService,
+        UserPriceRetouchingRepository $userPriceRetouchingRepository
     ) {
         $this->em = $em;
         $this->passwordEncoder = $passwordEncoder;
@@ -37,6 +41,7 @@ class UserAppController
         $this->userAppRepository = $userAppRepository;
         $this->userAppService = $userAppService;
         $this->tokenService = $tokenService;
+        $this->userPriceRetouchingRepository = $userPriceRetouchingRepository;
     }
 
     /**
@@ -50,7 +55,7 @@ class UserAppController
             'error' => true,
             'message' => 'error server',
         ];
-        
+
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
 
 
@@ -63,16 +68,15 @@ class UserAppController
                     ->setRoles(['ROLE_USER'])
                     ->setApitoken($this->tokenService->tokenGenerator())
                     ->setPrivateMode(false)
-                    ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']))
-                ;
+                    ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']));
 
                 $this->em->persist($user);
                 $this->em->flush();
                 $jsonContent['error'] = false;
                 $jsonContent['message'] = 'compte créé';
-                $jsonContent['user'] = $this->serializerInterface->serialize($user,'json', ['groups' => 'group1']);
-            }else {
-                $jsonContent['message'] = $valideDataAccount['message'].$validePassword['message'];
+                $jsonContent['user'] = $this->serializerInterface->serialize($user, 'json', ['groups' => 'group1']);
+            } else {
+                $jsonContent['message'] = $valideDataAccount['message'] . $validePassword['message'];
             }
             $response->setContent(json_encode($jsonContent));
             return $response;
@@ -83,7 +87,7 @@ class UserAppController
     }
 
     /**
-     * @Route("/api/account", methods="PATH")
+     * @Route("/api/account", methods="PATCH")
      */
     public function userApp_update(Request $request)
     {
@@ -119,7 +123,7 @@ class UserAppController
     }
 
     /**
-     *  @Route("/api/password", methods="PATH")
+     *  @Route("/api/password", methods="PATCH")
      */
     public function updatePassword(Request $request)
     {
@@ -154,7 +158,7 @@ class UserAppController
     }
 
     /**
-     * @Route("/api/privateMode", methods="PATH")
+     * @Route("/api/privateMode", methods="PATCH")
      */
     public function privateMode(Request $request)
     {
@@ -170,11 +174,38 @@ class UserAppController
             $this->em->flush();
 
             $jsonContent['error'] = false;
-            $jsonContent['message'] = $data['privateMode']?'Vous étes en mode privé':"vous n'étes plus en mode privé";
+            $jsonContent['message'] = $data['privateMode'] ? 'Vous étes en mode privé' : "vous n'étes plus en mode privé";
         }
         $response->setContent(json_encode($jsonContent));
         return  $response;
     }
+
+    /**
+     * @Route("/api/activeCouturier", methods="PATCH")
+     */
+    public function activeCouturier(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+            'activecouturier' => '',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+            $userApp->setActiveCouturier($data['activeCouturier']);
+            $this->em->flush();
+
+            $jsonContent['activeCouturier'] = $userApp->getActiveCouturier();
+            $jsonContent['message'] = $userApp->getActiveCouturier() ? 'vous étes un couturier' : "vous n'étes plus couturier";
+            $jsonContent['error'] = false;
+        }
+
+        $response->setContent(json_encode($jsonContent));
+        return  $response;
+    }
+
 
     /**
      * @Route("/api/imageProfil", methods="POST")
@@ -182,9 +213,54 @@ class UserAppController
     public function uploadImageProfil(Request $request)
     {
         $response = new Response();
-        $userApp =  $this->userAppRepository->findOneBy(['apitoken'=> $request->headers->get('X-AUTH-TOKEN')]);
+        $userApp =  $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
         $userApp->setImageProfil(json_decode($request->getContent(), true));
         $this->em->flush();
+        return $response;
+    }
+
+    /**
+     *@Route("/api/searchPrestation", methods="POST") 
+     */
+    public function searchPrestation(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+            'couturier' => []
+        ];
+
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            // $retouche = $this->retouchingRepository->findBy(['type' => $data['search']]);
+            $radius = !empty($data['radius']) ? $data['radius'] : 0.05;
+            $longitude = !empty($data['latitude']) ? $data['latitude'] : 48.861017;
+            $latitude = !empty($data['longitude']) ? $data['longitude'] : 2.3336696;
+            $retouche = !empty($data['search']) ? $data['search'] : "noSelect";
+
+            $couturierResultQuery = $this->userAppRepository->findCouturierBy($longitude, $latitude, $retouche, $radius);
+
+            $dataCouturier = [];
+            foreach ($couturierResultQuery as $user) {
+                $priceClient= $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
+                $dataCouturier[] = [
+                    'id' => !empty($user->getId()) ? $user->getId() : null,
+                    'username' => !empty($user->getUsername()) ? $user->getUsername() : 'ANONYMOUSLY',
+                    'bio' => !empty($user->getBio()) ? $user->getBio() : '',
+                    'imageProfil' => !empty($user->getImageProfil()) ? $user->getImageProfil() : null,
+                    'retouche' => [
+                        'priceShowClient' => $priceClient['PriceShowClient'],
+                        'type' => $retouche,
+                        ]
+                        
+                    ];
+                    dump($this->userPriceRetouchingRepository->findPriceBy($user, $retouche));
+            }
+            $jsonContent['couturier']= $dataCouturier;
+        
+        }
+        $response->setContent(json_encode($jsonContent));
         return $response;
     }
 }

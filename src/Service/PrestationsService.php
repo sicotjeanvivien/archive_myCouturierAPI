@@ -19,7 +19,6 @@ class PrestationsService
     { 
         $resultCommission = $this->priceGridRepository->findCommission($priceCouturier);
         $commission = $resultCommission === null? PriceGrid::DEFAULTVALUE : $resultCommission['commission'];
-        dump($priceCouturier, $commission);
         $price = $priceCouturier + $commission;
         return $price;
     }

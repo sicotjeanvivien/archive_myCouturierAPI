@@ -29,7 +29,6 @@ class PriceGridRepository extends ServiceEntityRepository
             WHERE p.min <= :price AND p.max > :price
         "
         )->setParameter('price', $priceCouturier);
-        dump($query->getOneOrNullResult());
         return $query->getOneOrNullResult();
     }
 

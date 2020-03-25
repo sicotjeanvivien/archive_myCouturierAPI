@@ -39,17 +39,16 @@ class LoginFormAuthenticator extends AbstractFormLoginAuthenticator implements P
 
     public function supports(Request $request)
     {
-        dump($request);
         return 'app_login' === $request->attributes->get('_route')
             && $request->isMethod('POST');
     }
 
     public function getCredentials(Request $request)
-    {
-        $credentials = [
-            'username' => $request->request->get('username'),
-            'password' => $request->request->get('password'),
-            // 'csrf_token' => $request->request->get('_csrf_token'),
+   {
+       $credentials = [
+           'username' => $request->request->get('username'),
+           'password' => $request->request->get('password'),
+           // 'csrf_token' => $request->request->get('_csrf_token'),
         ];
         // $request->getSession()->set(
         //     Security::LAST_USERNAME,

@@ -52,6 +52,23 @@ class UserPriceRetouchingRepository extends ServiceEntityRepository
         return $query->getOneOrNullResult();
     }
 
+    public function findPriceBy($user, $retouche)
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            "SELECT u.PriceShowClient
+            FROM App\Entity\UserPriceRetouching u
+            JOIN u.Retouching r
+            WHERE u.UserApp = :userapp AND r.type = :retouching
+        "
+        )->setParameters([
+            'userapp' => $user,
+            'retouching' => $retouche
+        ]);
+        return $query->getOneOrNullResult();
+    }
+
     // /**
     //  * @return UserPriceRetouching[] Returns an array of UserPriceRetouching objects
     //  */

@@ -15,7 +15,6 @@ class TestController extends AbstractController
      */
     public function login(Request $request)
     {
-        dump($request);
         $response = new Response();
         $response->setContent(json_encode( 'hello'));
         return $response;
