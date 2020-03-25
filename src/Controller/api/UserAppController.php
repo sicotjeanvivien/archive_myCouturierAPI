@@ -250,7 +250,7 @@ class UserAppController
                     'bio' => !empty($user->getBio()) ? $user->getBio() : '',
                     'imageProfil' => !empty($user->getImageProfil()) ? $user->getImageProfil() : null,
                     'longitude' => !empty($user->getLongitude()? $user->getLongitude():48.861017),
-                    'latitude' => !empty($user['longitude']) ? $user['longitude'] : 2.3336696,
+                    'latitude' => !empty($user->getLatitude()) ? $user->getLatitude() : 2.3336696,
                     'retouche' => [
                         'priceShowClient' => $priceClient['PriceShowClient'],
                         'type' => $retouche,
