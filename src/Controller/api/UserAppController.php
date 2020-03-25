@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Constraints\Length;
 
 class UserAppController
 {
@@ -260,6 +261,7 @@ class UserAppController
                 dump($this->userPriceRetouchingRepository->findPriceBy($user, $retouche));
             }
             $jsonContent['couturier'] = $dataCouturier;
+            count($dataCouturier) > 0 ? $jsonContent['error'] = false && $jsonContent['message'] = '' : $jsonContent['error'] = true && $jsonContent['message'] = 'aucun couturier trouvé dans votre zone.';
         }
         $response->setContent(json_encode($jsonContent));
         return $response;
