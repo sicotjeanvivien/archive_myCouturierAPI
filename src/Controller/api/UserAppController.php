@@ -243,24 +243,23 @@ class UserAppController
 
             $dataCouturier = [];
             foreach ($couturierResultQuery as $user) {
-                $priceClient= $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
+                $priceClient = $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
                 $dataCouturier[] = [
                     'id' => !empty($user->getId()) ? $user->getId() : null,
                     'username' => !empty($user->getUsername()) ? $user->getUsername() : 'ANONYMOUSLY',
                     'bio' => !empty($user->getBio()) ? $user->getBio() : '',
                     'imageProfil' => !empty($user->getImageProfil()) ? $user->getImageProfil() : null,
-                    'longitude' => !empty($user->getLongitude()? $user->getLongitude() :48.861017),
-                    'latitude' => !empty($user->getLatitude() ? $user->getLatitude() : 2.3336696),
+                    'longitude' => !empty($user->getLongitude()) ? $user->getLongitude() : 48.861017,
+                    'latitude' => !empty($user->getLatitude()) ? $user->getLatitude() : 2.3336696,
                     'retouche' => [
                         'priceShowClient' => $priceClient['PriceShowClient'],
                         'type' => $retouche,
-                        ]
-                        
-                    ];
-                    dump($this->userPriceRetouchingRepository->findPriceBy($user, $retouche));
+                    ]
+
+                ];
+                dump($this->userPriceRetouchingRepository->findPriceBy($user, $retouche));
             }
-            $jsonContent['couturier']= $dataCouturier;
-        
+            $jsonContent['couturier'] = $dataCouturier;
         }
         $response->setContent(json_encode($jsonContent));
         return $response;
