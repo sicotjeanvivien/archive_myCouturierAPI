@@ -236,8 +236,8 @@ class UserAppController
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             // $retouche = $this->retouchingRepository->findBy(['type' => $data['search']]);
             $radius = !empty($data['radius']) ? $data['radius'] : 0.05;
-            $longitude = !empty($data['latitude']) ? $data['latitude'] : 48.861017;
-            $latitude = !empty($data['longitude']) ? $data['longitude'] : 2.3336696;
+            $longitude = !empty($data['longitude']) ? $data['longitude'] : 48.861017;
+            $latitude = !empty($data['latitude']) ? $data['latitude'] : 2.3336696;
             $retouche = !empty($data['search']) ? $data['search'] : "noSelect";
 
             $couturierResultQuery = $this->userAppRepository->findCouturierBy($longitude, $latitude, $retouche, $radius);
