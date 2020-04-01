@@ -112,10 +112,17 @@ class UserApp implements UserInterface
      */
     private $latitude;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContactUs", mappedBy="userApp")
+     */
+    private $contactUs;
+
     public function __construct()
     {
         $this->userPriceRetouchings = new ArrayCollection();
         $this->prestations = new ArrayCollection();
+        $this->message = new ArrayCollection();
+        $this->contactUs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -382,4 +389,36 @@ class UserApp implements UserInterface
 
         return $this;
     }
+
+    /**
+     * @return Collection|ContactUs[]
+     */
+    public function getContactUs(): Collection
+    {
+        return $this->contactUs;
+    }
+
+    public function addContactUs(ContactUs $contactUs): self
+    {
+        if (!$this->contactUs->contains($contactUs)) {
+            $this->contactUs[] = $contactUs;
+            $contactUs->setUserApp($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContactUs(ContactUs $contactUs): self
+    {
+        if ($this->contactUs->contains($contactUs)) {
+            $this->contactUs->removeElement($contactUs);
+            // set the owning side to null (unless already changed)
+            if ($contactUs->getUserApp() === $this) {
+                $contactUs->setUserApp(null);
+            }
+        }
+
+        return $this;
+    }
+
 }

@@ -5,26 +5,23 @@ namespace App\Controller\api;
 use App\Entity\UserApp;
 use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
-use App\Service\TokenService;
+use App\Service\SecurityService;
 use App\Service\UserAppService;
 use Doctrine\ORM\EntityManagerInterface;
-use PhpParser\Node\Stmt\Label;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Constraints\Length;
 
 class UserAppController
 {
-
     private $em;
     private $passwordEncoder;
     private $serializerInterface;
     private $userAppRepository;
     private $userAppService;
-    private $tokenService;
+    private $securityService;
     private $userPriceRetouchingRepository;
 
     public function __construct(
@@ -33,7 +30,7 @@ class UserAppController
         SerializerInterface $serializerInterface,
         UserAppRepository $userAppRepository,
         UserAppService $userAppService,
-        TokenService $tokenService,
+        SecurityService $securityService,
         UserPriceRetouchingRepository $userPriceRetouchingRepository
     ) {
         $this->em = $em;
@@ -41,7 +38,7 @@ class UserAppController
         $this->serializerInterface = $serializerInterface;
         $this->userAppRepository = $userAppRepository;
         $this->userAppService = $userAppService;
-        $this->tokenService = $tokenService;
+        $this->securityService = $securityService;
         $this->userPriceRetouchingRepository = $userPriceRetouchingRepository;
     }
 
@@ -56,10 +53,7 @@ class UserAppController
             'error' => true,
             'message' => 'error server',
         ];
-
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
-
-
             $valideDataAccount = $this->userAppService->validateDataAccount($data);
             $validePassword = $this->userAppService->validateDataPassword($data);
 
@@ -67,7 +61,7 @@ class UserAppController
                 $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
                 $user
                     ->setRoles(['ROLE_USER'])
-                    ->setApitoken($this->tokenService->tokenGenerator())
+                    ->setApitoken($this->securityService->tokenGenerator())
                     ->setPrivateMode(false)
                     ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']));
 
@@ -98,7 +92,7 @@ class UserAppController
             'error' => true,
             'message' => 'error server',
         ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
 
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $dataValide = $this->userAppService->validateDataAccount($data);
@@ -134,7 +128,7 @@ class UserAppController
             'error' => true,
             'message' => 'error server',
         ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
 
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $dataValide = $this->userAppService->validateDataPassword($data);
@@ -169,7 +163,7 @@ class UserAppController
             'error' => true,
             'message' => 'error server',
         ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $userApp->setPrivateMode($data['privateMode']);
             $this->em->flush();
@@ -193,7 +187,7 @@ class UserAppController
             'message' => 'error server',
             'activecouturier' => '',
         ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $userApp->setActiveCouturier($data['activeCouturier']);
             $this->em->flush();
@@ -258,7 +252,7 @@ class UserAppController
                     ]
 
                 ];
-                dump($this->userPriceRetouchingRepository->findPriceBy($user, $retouche));
+
             }
             $jsonContent['couturier'] = $dataCouturier;
             count($dataCouturier) > 0 ? $jsonContent['error'] = false && $jsonContent['message'] = '' : $jsonContent['error'] = true && $jsonContent['message'] = 'aucun couturier trouvé dans votre zone.';

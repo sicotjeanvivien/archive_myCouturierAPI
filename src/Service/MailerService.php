@@ -2,34 +2,50 @@
 
 namespace App\Service;
 
-use Symfony\Bundle\SwiftmailerBundle\SwiftmailerBundle;
+use App\Repository\ConfigAppRepository;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Email;
 
 class MailerService
 {
-    public function sendEmail(\Swift_mailer $mailer)
+    private $mailerInterface;
+    private $configAppRepository;
+
+    public function __construct(MailerInterface $mailerInterface, ConfigAppRepository $configAppRepository)
     {
-        $message = (new \Swift_Message('Hello Email'))
-            ->setFrom('send@example.com')
-            ->setTo('recipient@example.com')
-            ->setBody(
-                $this->renderView(
-                    // templates/emails/registration.html.twig
-                    'emails/registration.html.twig',
-                    ['name' => $name]
-                ),
-                'text/html'
-            )
+        $this->mailerInterface = $mailerInterface;
+        $this->configAppRepository = $configAppRepository;
+    }
 
-            // you can remove the following code if you don't define a text version for your emails
-            ->addPart(
-                $this->renderView(
-                    // templates/emails/registration.txt.twig
-                    'emails/registration.txt.twig',
-                    ['name' => $name]
-                ),
-                'text/plain'
-            );
+    public function sendEmail($to, $subject, $content)
+    {
+        $transport = $this->createTransportCustom();
+        $adminMail = $this->configAppRepository->findOneBy(['site' => $_ENV['SITE']])->getUsernameMailer();
+        $mailer = new Mailer($transport);
+        $email = (new Email())
+            ->from($adminMail)
+            ->to($to)
+            ->subject($subject)
+            ->html($content);
+        $mailer->send($email);
+    }
 
-        $mailer->send($message);
+    private function createTransportCustom()
+    {
+        $configApp = $this->configAppRepository->findOneBy(['site' => $_ENV['SITE']]);
+        $host = $configApp->getHostMailer();
+        $port = $configApp->getPortMailer();
+        $password = $configApp->getPasswordMailer();
+        $username = $configApp->getUsernameMailer();
+        $protocole = $configApp->getProtocoleMailer();
+        if (!empty($host) && !empty($port) && !empty($password) && !empty($username) && !empty($protocole)) {
+            $dsn = $protocole . '://' . $username . ':' . $password . '@' . $host . ':' . $port;
+        } else {
+            $dsn = 'smtp://admin@mycouturierapi.sicot-development.fr:Azertyuiop123!@smtp.ionos.fr:465';
+        }
+        $transport = Transport::fromDsn($dsn);
+        return $transport;
     }
 }
