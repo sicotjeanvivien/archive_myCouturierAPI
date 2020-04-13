@@ -61,7 +61,7 @@ class UserApp implements UserInterface
     private $lastname;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\Column(type="string", length=255, unique=true)
      * @Groups({"group1"})
      */
     private $email;

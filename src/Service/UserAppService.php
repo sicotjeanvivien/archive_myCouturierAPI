@@ -14,28 +14,21 @@ class UserAppService
     public function validateDataAccount($data)
     {
 
-        
+
         $error = [
             'error' => false,
             'message' => '',
         ];
-        
-        $id = empty($data['id'])? null:ltrim($data['id']);
-        $firstname = ltrim($data['firstname']);
-        $lastname = ltrim($data['lastname']);
-        $username = ltrim($data['username']);
-        $email = ltrim($data['email']);
+
+        $id = empty($data['id']) ? null : rtrim(ltrim($data['id']));
+        $firstname = rtrim(ltrim($data['firstname']));
+        $lastname = rtrim(ltrim($data['lastname']));
+        $email = rtrim(ltrim($data['email']));
+        $emailConfirm = rtrim(ltrim($data['emailConfirm']));
 
         if (empty($firstname)) {
             $error['error'] = true;
             $error['message'] = $error['message'] . 'prénom non valide';
-        }
-        if (
-            empty($username)
-            || $this->userAppRepository->countUsername($username, $id) > 0
-        ) {
-            $error['error'] = true;
-            $error['message'] = $error['message'] . ' username non valide';
         }
         if (empty($lastname)) {
             $error['error'] = true;
@@ -43,6 +36,8 @@ class UserAppService
         }
         if (
             empty($email)
+            || empty($emailConfirm)
+            || $email !== $emailConfirm
             || stristr($email, '@') === FALSE
         ) {
             $error['error'] = true;
@@ -69,7 +64,6 @@ class UserAppService
         }
         if (strlen($password) < 7) {
             $error['message'] = $error['message'] . ' nombre de caratères insufissant';
-            
         }
         return $error;
     }

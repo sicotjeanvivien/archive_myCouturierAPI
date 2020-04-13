@@ -60,6 +60,7 @@ class UserAppController
             if (!$valideDataAccount['error'] && !$validePassword['error']) {
                 $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
                 $user
+                    ->setUsername($user->getFirstname().$user->getLastname()[0])
                     ->setRoles(['ROLE_USER'])
                     ->setApitoken($this->securityService->tokenGenerator())
                     ->setPrivateMode(false)
@@ -99,10 +100,9 @@ class UserAppController
 
             if (!$dataValide['error']) {
                 $userApp
-                    ->setUsername($data['username'])
-                    ->setFirstname($data['firstname'])
-                    ->setLastname($data['lastname'])
-                    ->setEmail($data['email']);
+                    ->setFirstname(empty($data['firstname']) ? ' ' : $data['firstname'])
+                    ->setLastname(empty($data['lastname']) ? ' ' :  $data['lastname'])
+                    ->setEmail(empty($data['email']) ? ' ' : $data['email']);
                 $this->em->flush($userApp);
                 $jsonContent['error'] = false;
                 $jsonContent['message'] = 'Information du compte mise à jour.';
@@ -252,7 +252,6 @@ class UserAppController
                     ]
 
                 ];
-
             }
             $jsonContent['couturier'] = $dataCouturier;
             count($dataCouturier) > 0 ? $jsonContent['error'] = false && $jsonContent['message'] = '' : $jsonContent['error'] = true && $jsonContent['message'] = 'aucun couturier trouvé dans votre zone.';

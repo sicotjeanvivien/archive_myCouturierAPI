@@ -48,6 +48,21 @@ class UserPriceRetouching
      */
     private $prestations;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $deadline;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $tool;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $commitment;
+
     public function __construct()
     {
         $this->prestationHistories = new ArrayCollection();
@@ -165,6 +180,42 @@ class UserPriceRetouching
                 $prestation->setRetouching(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getDeadline(): ?int
+    {
+        return $this->deadline;
+    }
+
+    public function setDeadline(?int $deadline): self
+    {
+        $this->deadline = $deadline;
+
+        return $this;
+    }
+
+    public function getTool(): ?string
+    {
+        return $this->tool;
+    }
+
+    public function setTool(?string $tool): self
+    {
+        $this->tool = $tool;
+
+        return $this;
+    }
+
+    public function getCommitment(): ?bool
+    {
+        return $this->commitment;
+    }
+
+    public function setCommitment(?bool $commitment): self
+    {
+        $this->commitment = $commitment;
 
         return $this;
     }
