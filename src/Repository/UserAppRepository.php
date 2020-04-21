@@ -77,6 +77,29 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         // returns an array of Product objects
         return $query->getResult();
     }
+
+    public function findAllCouturierBy($longitude, $latitude, $radius)
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            "SELECT a
+            FROM App\Entity\UserApp a
+            JOIN a.userPriceRetouchings ur
+            JOIN ur.Retouching r 
+            WHERE a.activeCouturier = true  
+            AND (a.longitude BETWEEN (:longitude - :radius) AND (:longitude + :radius)) 
+            AND (a.latitude BETWEEN (:latitude - :radius)  AND (:latitude + :radius))
+        "
+        )->setParameters([
+            'longitude' => $longitude,
+            'latitude' => $latitude,
+            'radius' => $radius,
+        ]);
+
+        // returns an array of Product objects
+        return $query->getResult();
+    }
 }
 
     // /**

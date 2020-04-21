@@ -75,7 +75,8 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
     {
         $data = [
             // you may ant to customize or obfuscate the message first
-            'message' => strtr($exception->getMessageKey(), $exception->getMessageData())
+            'message' => strtr($exception->getMessageKey(), $exception->getMessageData()),
+            'error' => 'invalid credentials'
 
             // or to translate this message
             // $this->translator->trans($exception->getMessageKey(), $exception->getMessageData())

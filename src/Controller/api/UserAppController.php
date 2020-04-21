@@ -2,9 +2,11 @@
 
 namespace App\Controller\api;
 
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\UserApp;
 use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
+use App\Service\MailerService;
 use App\Service\SecurityService;
 use App\Service\UserAppService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,7 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
-class UserAppController
+class UserAppController extends AbstractController
 {
     private $em;
     private $passwordEncoder;
@@ -23,6 +25,7 @@ class UserAppController
     private $userAppService;
     private $securityService;
     private $userPriceRetouchingRepository;
+    private $mailerService;
 
     public function __construct(
         EntityManagerInterface $em,
@@ -31,7 +34,8 @@ class UserAppController
         UserAppRepository $userAppRepository,
         UserAppService $userAppService,
         SecurityService $securityService,
-        UserPriceRetouchingRepository $userPriceRetouchingRepository
+        UserPriceRetouchingRepository $userPriceRetouchingRepository,
+        MailerService $mailerService
     ) {
         $this->em = $em;
         $this->passwordEncoder = $passwordEncoder;
@@ -40,6 +44,7 @@ class UserAppController
         $this->userAppService = $userAppService;
         $this->securityService = $securityService;
         $this->userPriceRetouchingRepository = $userPriceRetouchingRepository;
+        $this->mailerService = $mailerService;
     }
 
     /**
@@ -60,7 +65,7 @@ class UserAppController
             if (!$valideDataAccount['error'] && !$validePassword['error']) {
                 $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
                 $user
-                    ->setUsername($user->getFirstname().$user->getLastname()[0])
+                    ->setUsername($user->getFirstname() . ' ' . $user->getLastname()[0])
                     ->setRoles(['ROLE_USER'])
                     ->setApitoken($this->securityService->tokenGenerator())
                     ->setPrivateMode(false)
@@ -71,6 +76,9 @@ class UserAppController
                 $jsonContent['error'] = false;
                 $jsonContent['message'] = 'compte créé';
                 $jsonContent['user'] = $this->serializerInterface->serialize($user, 'json', ['groups' => 'group1']);
+
+                $content = $this->renderView('emails/createAccount.html.twig');
+                $this->mailerService->sendEmail($user->getEmail(), 'create account', $content);
             } else {
                 $jsonContent['message'] = $valideDataAccount['message'] . $validePassword['message'];
             }
@@ -221,6 +229,7 @@ class UserAppController
     {
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
+        $couturierResultQuery = [];
         $jsonContent = [
             'error' => true,
             'message' => 'error server',
@@ -232,30 +241,76 @@ class UserAppController
             $radius = !empty($data['radius']) ? $data['radius'] : 0.05;
             $longitude = !empty($data['longitude']) ? $data['longitude'] : 48.861017;
             $latitude = !empty($data['latitude']) ? $data['latitude'] : 2.3336696;
-            $retouche = !empty($data['search']) ? $data['search'] : "noSelect";
-
-            $couturierResultQuery = $this->userAppRepository->findCouturierBy($longitude, $latitude, $retouche, $radius);
-
+            $retouche = !empty($data['search']) ? $data['search'] : 'noSelect';
             $dataCouturier = [];
-            foreach ($couturierResultQuery as $user) {
-                $priceClient = $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
-                $dataCouturier[] = [
-                    'id' => !empty($user->getId()) ? $user->getId() : null,
-                    'username' => !empty($user->getUsername()) ? $user->getUsername() : 'ANONYMOUSLY',
-                    'bio' => !empty($user->getBio()) ? $user->getBio() : '',
-                    'imageProfil' => !empty($user->getImageProfil()) ? $user->getImageProfil() : null,
-                    'longitude' => !empty($user->getLongitude()) ? $user->getLongitude() : 48.861017,
-                    'latitude' => !empty($user->getLatitude()) ? $user->getLatitude() : 2.3336696,
-                    'retouche' => [
-                        'priceShowClient' => $priceClient['PriceShowClient'],
-                        'type' => $retouche,
-                    ]
 
-                ];
+            if ($retouche === 'noSelect') {
+                $couturierResultQuery = $this->userAppRepository->findAllCouturierBy($longitude, $latitude, $radius);
+                foreach ($couturierResultQuery as $user) {
+                    $detailRetouche = $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
+                    $dataCouturier[] = [
+                        'id' => !empty($user->getId()) ? $user->getId() : null,
+                        'username' => !empty($user->getUsername()) ? $user->getUsername() : 'ANONYMOUSLY',
+                        'bio' => !empty($user->getBio()) ? $user->getBio() : '',
+                        'raiting' => !empty($user->getRaitingCouturier) ? $user->getRaitingCouturier : '',
+                        'imageProfil' => !empty($user->getImageProfil()) ? $user->getImageProfil() : null,
+                        'longitude' => !empty($user->getLongitude()) ? $user->getLongitude() : 48.861017,
+                        'latitude' => !empty($user->getLatitude()) ? $user->getLatitude() : 2.3336696,
+                    ];
+                }
+            } else {
+                $couturierResultQuery = $this->userAppRepository->findCouturierBy($longitude, $latitude, $retouche, $radius);
+                foreach ($couturierResultQuery as $user) {
+                    $detailRetouche = $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
+                    $dataCouturier[] = [
+                        'id' => !empty($user->getId()) ? $user->getId() : null,
+                        'username' => !empty($user->getUsername()) ? $user->getUsername() : 'ANONYMOUSLY',
+                        'bio' => !empty($user->getBio()) ? $user->getBio() : '',
+                        'raiting' => !empty($user->getRaitingCouturier) ? $user->getRaitingCouturier : '',
+                        'imageProfil' => !empty($user->getImageProfil()) ? $user->getImageProfil() : null,
+                        'longitude' => !empty($user->getLongitude()) ? $user->getLongitude() : 48.861017,
+                        'latitude' => !empty($user->getLatitude()) ? $user->getLatitude() : 2.3336696,
+                        'retouche' => [
+                            // 'test'=> $detailRetouche->getPriceShowClient() ,
+                            'id' => !empty($detailRetouche->getId()) ? $detailRetouche->getId() : '',
+                            'priceShowClient' => !empty($detailRetouche->getPriceShowClient()) ? $detailRetouche->getPriceShowClient() : '',
+                            'tool' => !empty($detailRetouche->getTool()) ? $detailRetouche->getTool() : '',
+                            'deadline' => !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
+                            'commitment' => !empty($detailRetouche->getCommitment()) ? $detailRetouche->getCommitment() : '',
+                            'deadline'=> !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
+                            'type' => $retouche,
+                        ]
+
+                    ];
+                }
             }
             $jsonContent['couturier'] = $dataCouturier;
             count($dataCouturier) > 0 ? $jsonContent['error'] = false && $jsonContent['message'] = '' : $jsonContent['error'] = true && $jsonContent['message'] = 'aucun couturier trouvé dans votre zone.';
         }
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/api/deleteAccount", methods="POST")
+     */
+    public function delateAccount(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+        ];
+
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $userApp = $this->userAppRepository->findOneBy(['email'=>$data['email']]);
+            $this->em->remove($userApp);
+            $this->em->flush();   
+            $jsonContent['error']= false;
+        }
+
         $response->setContent(json_encode($jsonContent));
         return $response;
     }

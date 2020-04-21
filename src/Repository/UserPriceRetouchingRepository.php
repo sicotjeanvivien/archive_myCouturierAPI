@@ -57,7 +57,7 @@ class UserPriceRetouchingRepository extends ServiceEntityRepository
         $entityManager = $this->getEntityManager();
 
         $query = $entityManager->createQuery(
-            "SELECT u.PriceShowClient
+            "SELECT u
             FROM App\Entity\UserPriceRetouching u
             JOIN u.Retouching r
             WHERE u.UserApp = :userapp AND r.type = :retouching

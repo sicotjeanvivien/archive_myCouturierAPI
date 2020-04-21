@@ -48,4 +48,5 @@ class MailerService
         $transport = Transport::fromDsn($dsn);
         return $transport;
     }
+
 }

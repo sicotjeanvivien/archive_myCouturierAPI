@@ -63,10 +63,16 @@ class UserPriceRetouching
      */
     private $commitment;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Prestations", mappedBy="userPriceRetouching")
+     */
+    private $descriptio;
+
     public function __construct()
     {
         $this->prestationHistories = new ArrayCollection();
         $this->prestations = new ArrayCollection();
+        $this->descriptio = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -216,6 +222,37 @@ class UserPriceRetouching
     public function setCommitment(?bool $commitment): self
     {
         $this->commitment = $commitment;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Prestations[]
+     */
+    public function getDescriptio(): Collection
+    {
+        return $this->descriptio;
+    }
+
+    public function addDescriptio(Prestations $descriptio): self
+    {
+        if (!$this->descriptio->contains($descriptio)) {
+            $this->descriptio[] = $descriptio;
+            $descriptio->setUserPriceRetouching($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDescriptio(Prestations $descriptio): self
+    {
+        if ($this->descriptio->contains($descriptio)) {
+            $this->descriptio->removeElement($descriptio);
+            // set the owning side to null (unless already changed)
+            if ($descriptio->getUserPriceRetouching() === $this) {
+                $descriptio->setUserPriceRetouching(null);
+            }
+        }
 
         return $this;
     }

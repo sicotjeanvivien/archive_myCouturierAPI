@@ -34,16 +34,14 @@ class UserAppService
             $error['error'] = true;
             $error['message'] = $error['message'] . ' nom non valide';
         }
-        if (
-            empty($email)
-            || empty($emailConfirm)
-            || $email !== $emailConfirm
-            || stristr($email, '@') === FALSE
-        ) {
+        if (empty($email) || stristr($email, '@') === FALSE) {
             $error['error'] = true;
             $error['message'] = $error['message'] . ' email non valide';
         }
-
+        if ($email !== $emailConfirm) {
+            $error['error'] = true;
+            $error['message'] = $error['message'] . 'les deux adresses emails ne correspondent pas';
+        }
         return $error;
     }
 

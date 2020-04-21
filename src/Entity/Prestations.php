@@ -24,11 +24,6 @@ class Prestations
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\UserPriceRetouching", inversedBy="prestations")
-     */
-    private $retouching;
-
-    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\UserApp", inversedBy="prestations")
      */
     private $client;
@@ -43,6 +38,31 @@ class Prestations
      */
     private $state;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\UserPriceRetouching", inversedBy="descriptio")
+     */
+    private $userPriceRetouching;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $description;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $photo;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $accept;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $pay;
+
     public function __construct()
     {
         $this->prestationHistories = new ArrayCollection();
@@ -51,18 +71,6 @@ class Prestations
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getRetouching(): ?UserPriceRetouching
-    {
-        return $this->retouching;
-    }
-
-    public function setRetouching(?UserPriceRetouching $retouching): self
-    {
-        $this->retouching = $retouching;
-
-        return $this;
     }
 
     public function getClient(): ?UserApp
@@ -116,6 +124,66 @@ class Prestations
     public function setState(?string $active): self
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function getUserPriceRetouching(): ?UserPriceRetouching
+    {
+        return $this->userPriceRetouching;
+    }
+
+    public function setUserPriceRetouching(?UserPriceRetouching $userPriceRetouching): self
+    {
+        $this->userPriceRetouching = $userPriceRetouching;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getPhoto(): ?string
+    {
+        return $this->photo;
+    }
+
+    public function setPhoto(?string $photo): self
+    {
+        $this->photo = $photo;
+
+        return $this;
+    }
+
+    public function getAccept(): ?bool
+    {
+        return $this->accept;
+    }
+
+    public function setAccept(?bool $accept): self
+    {
+        $this->accept = $accept;
+
+        return $this;
+    }
+
+    public function getPay(): ?bool
+    {
+        return $this->pay;
+    }
+
+    public function setPay(?bool $pay): self
+    {
+        $this->pay = $pay;
 
         return $this;
     }
