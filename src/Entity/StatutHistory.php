@@ -11,6 +11,11 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class StatutHistory
 {
+
+    public const DEMANDE = 'demande';
+    public const ACCEPT = 'acceptaion';
+    public const PAY = 'payé';
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()

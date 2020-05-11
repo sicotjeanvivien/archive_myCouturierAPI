@@ -16,6 +16,9 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
+/**
+ * @Route("/api/userapp")
+ */
 class UserAppController extends AbstractController
 {
     private $em;
@@ -48,50 +51,7 @@ class UserAppController extends AbstractController
     }
 
     /**
-     * @Route("/userapp_create", methods={"POST"})
-     */
-    public function userApp_create(Request $request)
-    {
-        $response = new Response();
-        $response->headers->set('Content-Type', 'application/json');
-        $jsonContent = [
-            'error' => true,
-            'message' => 'error server',
-        ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type', 'application/json')) {
-            $valideDataAccount = $this->userAppService->validateDataAccount($data);
-            $validePassword = $this->userAppService->validateDataPassword($data);
-
-            if (!$valideDataAccount['error'] && !$validePassword['error']) {
-                $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
-                $user
-                    ->setUsername($user->getFirstname() . ' ' . $user->getLastname()[0])
-                    ->setRoles(['ROLE_USER'])
-                    ->setApitoken($this->securityService->tokenGenerator())
-                    ->setPrivateMode(false)
-                    ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']));
-
-                $this->em->persist($user);
-                $this->em->flush();
-                $jsonContent['error'] = false;
-                $jsonContent['message'] = 'compte créé';
-                $jsonContent['user'] = $this->serializerInterface->serialize($user, 'json', ['groups' => 'group1']);
-
-                $content = $this->renderView('emails/createAccount.html.twig');
-                $this->mailerService->sendEmail($user->getEmail(), 'create account', $content);
-            } else {
-                $jsonContent['message'] = $valideDataAccount['message'] . $validePassword['message'];
-            }
-            $response->setContent(json_encode($jsonContent));
-            return $response;
-        } else {
-            $response->setContent(json_encode($jsonContent));
-            return  $response;
-        }
-    }
-
-    /**
-     * @Route("/api/account", methods="PATCH")
+     * @Route("/update", methods="PATCH")
      */
     public function userApp_update(Request $request)
     {
@@ -126,7 +86,7 @@ class UserAppController extends AbstractController
     }
 
     /**
-     *  @Route("/api/password", methods="PATCH")
+     *  @Route("/password", methods="PATCH")
      */
     public function updatePassword(Request $request)
     {
@@ -161,7 +121,7 @@ class UserAppController extends AbstractController
     }
 
     /**
-     * @Route("/api/privateMode", methods="PATCH")
+     * @Route("/privateMode", methods="PATCH")
      */
     public function privateMode(Request $request)
     {
@@ -184,7 +144,7 @@ class UserAppController extends AbstractController
     }
 
     /**
-     * @Route("/api/activeCouturier", methods="PATCH")
+     * @Route("/activeCouturier", methods="PATCH")
      */
     public function activeCouturier(Request $request)
     {
@@ -193,14 +153,13 @@ class UserAppController extends AbstractController
         $jsonContent = [
             'error' => true,
             'message' => 'error server',
-            'activecouturier' => '',
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $userApp->setActiveCouturier($data['activeCouturier']);
             $this->em->flush();
 
-            $jsonContent['activeCouturier'] = $userApp->getActiveCouturier();
+            $jsonContent['activeCouturier'] = $userApp->getActiveCouturier() ? 'true' : 'false';
             $jsonContent['message'] = $userApp->getActiveCouturier() ? 'vous étes un couturier' : "vous n'étes plus couturier";
             $jsonContent['error'] = false;
         }
@@ -211,7 +170,7 @@ class UserAppController extends AbstractController
 
 
     /**
-     * @Route("/api/imageProfil", methods="POST")
+     * @Route("/imageProfil", methods="POST")
      */
     public function uploadImageProfil(Request $request)
     {
@@ -223,7 +182,7 @@ class UserAppController extends AbstractController
     }
 
     /**
-     *@Route("/api/searchPrestation", methods="POST") 
+     *@Route("/searchPrestation", methods="POST") 
      */
     public function searchPrestation(Request $request)
     {
@@ -277,7 +236,7 @@ class UserAppController extends AbstractController
                             'tool' => !empty($detailRetouche->getTool()) ? $detailRetouche->getTool() : '',
                             'deadline' => !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
                             'commitment' => !empty($detailRetouche->getCommitment()) ? $detailRetouche->getCommitment() : '',
-                            'deadline'=> !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
+                            'deadline' => !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
                             'type' => $retouche,
                         ]
 
@@ -292,7 +251,7 @@ class UserAppController extends AbstractController
     }
 
     /**
-     * @Route("/api/deleteAccount", methods="POST")
+     * @Route("/delete", methods="POST")
      */
     public function delateAccount(Request $request)
     {
@@ -305,10 +264,10 @@ class UserAppController extends AbstractController
         ];
 
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
-            $userApp = $this->userAppRepository->findOneBy(['email'=>$data['email']]);
+            $userApp = $this->userAppRepository->findOneBy(['email' => $data['email']]);
             $this->em->remove($userApp);
-            $this->em->flush();   
-            $jsonContent['error']= false;
+            $this->em->flush();
+            $jsonContent['error'] = false;
         }
 
         $response->setContent(json_encode($jsonContent));

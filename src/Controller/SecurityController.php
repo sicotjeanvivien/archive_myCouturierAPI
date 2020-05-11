@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Repository\UserAppRepository;
 use App\Service\MailerService;
 use App\Service\SecurityService;
+use App\Service\UserAppService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,34 +13,41 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
-
 use Symfony\Component\Serializer\SerializerInterface;
-
+use App\Entity\UserApp;
+use App\Service\MangoPayService;
+use Symfony\Component\Validator\Constraints\Date;
 
 class SecurityController extends AbstractController
 {
 
     private $em;
     private $securityService;
-    private $serialazer;
+    private $serializerInterface;
     private $mailerService;
     private $userAppRepository;
     private $passwordEncoder;
+    private $mangoPayService;
+    private $userappService;
 
     public function __construct(
         EntityManagerInterface $em,
         SecurityService $securityService,
-        SerializerInterface $serialazer,
+        SerializerInterface $serializerInterface,
         MailerService $mailerService,
         UserAppRepository $userAppRepository,
-        UserPasswordEncoderInterface $passwordEncoder
+        UserPasswordEncoderInterface $passwordEncoder,
+        UserAppService $userAppService,
+        MangoPayService $mangoPayService
     ) {
         $this->em = $em;
         $this->securityService = $securityService;
-        $this->serialazer = $serialazer;
+        $this->mangoPayService = $mangoPayService;
+        $this->serializerInterface = $serializerInterface;
         $this->mailerService = $mailerService;
         $this->userAppRepository = $userAppRepository;
         $this->passwordEncoder = $passwordEncoder;
+        $this->userAppService = $userAppService;
     }
 
     /**
@@ -51,14 +59,74 @@ class SecurityController extends AbstractController
 
         $user = $this->getUser();
         $user->setApitoken($token);
-
-        $jsonContent = $this->serialazer->serialize($user, 'json', ['groups' => 'group1']);
+        $jsonContent = [
+            'activeCouturier' => $user->getActiveCouturier() ? 'true' : 'false',
+            'apitoken' => $user->getApitoken(),
+            'bio' => $user->getBio(),
+            'email' => $user->getEmail(),
+            'fisrtname' => $user->getFirstname(),
+            'id' => strval($user->getId()),
+            'imageProfil' => $user->getImageProfil(),
+            'lastname' => $user->getLastname(),
+            'privateMode' => $user->getPrivateMode() ? 'true' : 'false',
+            'username' => $user->getUsername(),
+        ];
         $this->em->flush();
-
         $response = new Response();
-        $response->setContent($jsonContent);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->setContent(json_encode($jsonContent));
         return $response;
     }
+
+    /**
+     * @Route("/userapp_create", methods={"POST"})
+     */
+    public function userApp_create(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+
+            $valideDataAccount = $this->userAppService->validateDataAccount($data);
+            $validePassword = $this->userAppService->validateDataPassword($data);
+
+            if (!$valideDataAccount['error'] && !$validePassword['error']) {
+                $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
+                $mangoUser = $this->mangoPayService->setMangoUser($data);
+                $mangoWallet = $this->mangoPayService->setMangoWallet($mangoUser->Id);
+                $user
+                    ->setUsername($user->getFirstname() . ' ' . $user->getLastname()[0])
+                    ->setRoles(['ROLE_USER'])
+                    ->setApitoken($this->securityService->tokenGenerator())
+                    ->setPrivateMode(false)
+                    ->setCreationDate(new Date("now"))
+                    ->setMangoUserId($mangoUser->Id)
+                    ->setMangoWalletId($mangoWallet->Id)
+                    ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']));
+
+                $this->em->persist($user);
+                $this->em->flush();
+                $jsonContent['error'] = false;
+                $jsonContent['message'] = 'compte créé';
+                $jsonContent['user'] = $this->serializerInterface->serialize($user, 'json', ['groups' => 'group1']);
+
+                $content =  $this->renderView('emails/createAccount.html.twig');
+                $this->mailerService->sendEmail($user->getEmail(), 'create account', $content);
+            } else {
+                $jsonContent['message'] = $valideDataAccount['message'] . $validePassword['message'];
+            }
+            $response->setContent(json_encode($jsonContent));
+            return $response;
+        } else {
+            $response->setContent(json_encode($jsonContent));
+            return  $response;
+        }
+    }
+
 
     /**
      * @Route("/logout", name="app_logout", methods={"GET"})

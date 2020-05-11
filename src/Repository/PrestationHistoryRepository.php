@@ -19,6 +19,19 @@ class PrestationHistoryRepository extends ServiceEntityRepository
         parent::__construct($registry, PrestationHistory::class);
     }
 
+    public function findAllByPrestation($prestation)
+    {
+        $query = $this->getEntityManager()->createQuery(
+            "SELECT p.date, t.statut
+            FROM App\Entity\PrestationHistory p
+            JOIN p.statut t
+            WHERE p.prestation = :prestation 
+            ORDER BY p.date 
+            "
+        )->setParameter('prestation', $prestation);
+        return $query->getResult();
+    }
+
     // /**
     //  * @return PrestationHistory[] Returns an array of PrestationHistory objects
     //  */

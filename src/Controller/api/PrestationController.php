@@ -2,45 +2,62 @@
 
 namespace App\Controller\api;
 
+use App\Entity\PrestationHistory;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\Prestations;
+use App\Entity\StatutHistory;
+use App\Repository\MessageRepository;
+use App\Repository\PrestationHistoryRepository;
 use App\Repository\PrestationsRepository;
 use App\Repository\RetouchingRepository;
+use App\Repository\StatutHistoryRepository;
 use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
+use App\Service\PrestationsService;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 
-
-
 /**
  *@Route("/api") 
  */
-class PrestationController
+class PrestationController extends AbstractController
 {
     private $userAppRepository;
     private $prestationsRepository;
-    private $retouchingRepository;
+    private $prestationHistoryRepository;
     private $userPriceRetouchingRepository;
+    private $prestationService;
+    private $statutHistoryRepository;
+    private $messageRepository;
     private $em;
 
     public function __construct(
+        StatutHistoryRepository $statutHistoryRepository,
         UserAppRepository $userAppRepository,
         PrestationsRepository $prestationsRepository,
         RetouchingRepository $retouchingRepository,
         UserPriceRetouchingRepository $userPriceRetouchingRepository,
-        EntityManagerInterface $entityManagerInterface
+        EntityManagerInterface $entityManagerInterface,
+        PrestationsService $prestationService,
+        PrestationHistoryRepository $prestationHistoryRepository,
+        MessageRepository $messageRepository
     ) {
         $this->em = $entityManagerInterface;
+        $this->statutHistoryRepository = $statutHistoryRepository;
+        $this->prestationService = $prestationService;
         $this->userAppRepository = $userAppRepository;
         $this->prestationsRepository = $prestationsRepository;
         $this->retouchingRepository = $retouchingRepository;
         $this->userPriceRetouchingRepository = $userPriceRetouchingRepository;
+        $this->prestationHistoryRepository = $prestationHistoryRepository;
+        $this->messageRepository = $messageRepository;
     }
 
     /**
-     * @Route("/prestations", methods="GET")
+     * @Route("/prestation", methods="GET")
      */
     public function prestationsShow(Request $request)
     {
@@ -49,23 +66,24 @@ class PrestationController
         $jsonContent = [
             'error' => true,
             'message' => 'error server',
-            'prestationsINPROGRESS' => [],
-            'prestationsEND' => [],
         ];
         $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-        $prestationsINPROGRESS = $this->prestationsRepository->findlastStatutByUserApp($userApp->getId(), Prestations::ACTIVE);
-        $prestationsEND = $this->prestationsRepository->findlastStatutByUserApp($userApp->getId(), Prestations::INACTIVE);
-        $jsonContent['prestationsINPROGRESS'] = $prestationsINPROGRESS;
-        $jsonContent['prestationsEND'] = $prestationsEND;
+        if ($userApp) {
+            $jsonContent['client'] = $this->prestationService->prestaClient($userApp);
+            $jsonContent['couturier'] = $this->prestationService->prestaCouturier($userApp);
+            $jsonContent['error'] = false;
+            $jsonContent['message'] = "it's ok";
+        }
+        $jsonContent['id'] = $userApp->getId();
 
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
 
     /**
-     * @Route("/prestationDetail/{id}", methods="GET")
+     * @Route("/prestation/detail/{id}", methods="GET")
      */
-    public function prestationDetail($id)
+    public function prestationDetailClient(Request $request, $id)
     {
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
@@ -74,12 +92,37 @@ class PrestationController
             'message' => 'error server',
         ];
 
+        $prestation = $this->prestationsRepository->findOneBy(['id' => $id]);
+        $prestationHistory = $this->prestationHistoryRepository->findAllByPrestation($prestation);
+        $message = $this->messageRepository->findAllByPrestation($prestation);
+        if ($request->headers->get('Content-Type') === 'application/json' && !empty($prestation) && !empty($prestationHistory) && !empty($message) ) {
+
+            $jsonContent['prestation'] = [
+                'id'=> $prestation->getId(),
+                'client' => $prestation->getClient()->getUsername(),
+                'couturier' => $prestation->getUserPriceRetouching()->getUserApp()->getUsername(),
+                'state' => $prestation->getState() ? $prestation->getState() : null,
+                'description' => $prestation->getDescription() ? $prestation->getDescription() : null,
+                'photo' => $prestation->getPhoto() ? $prestation->getPhoto() : null,
+                'accept' => $prestation->getAccept() ? $prestation->getAccept() : null,
+                'pay' => $prestation->getPay() ? $prestation->getPay() : null,
+                'priceShow' => $prestation->getUserPriceRetouching()->getPriceShowClient(),
+                'priceCouturier' => $prestation->getUserPriceRetouching()->getPriceCouturier(),
+                'deadline' => $prestation->getUserPriceRetouching()->getDeadline(),
+                'tool' => $prestation->getUserPriceRetouching()->getTool(),
+                'commitment' => $prestation->getUserPriceRetouching()->getCommitment(),
+                'history' => $prestationHistory,
+                'message' => $message,
+
+            ];
+            $jsonContent['error'] = false;
+        }
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
 
     /**
-     * @Route("/api/createPrestation", methods="POST")
+     * @Route("/prestation", methods="POST")
      */
     public function create(Request $request)
     {
@@ -93,25 +136,34 @@ class PrestationController
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userPriceRetouching = $this->userPriceRetouchingRepository->findOneBy(['id' => $data['retoucheId']]);
             $client =  $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-
-            $prestation = new Prestations();
-            $prestation
-                ->setClient($client)
-                ->setDescription($data['description'])
-                ->setPhoto($data['photo'])
-                ->setState(Prestations::ACTIVE)
-                ->setUserPriceRetouching($userPriceRetouching);
-
-            $this->em->persist($prestation);
-            $this->em->flush();
+            if (!empty($userPriceRetouching) && !empty($client)) {
+                $prestation = new Prestations();
+                $prestation
+                    ->setClient($client)
+                    ->setDescription(!empty($data['description']) ? $data['description'] : null)
+                    ->setPhoto(!empty($data['photo']) ? $data['photo'] : null)
+                    ->setState(Prestations::ACTIVE)
+                    ->setUserPriceRetouching($userPriceRetouching);
+                $this->em->persist($prestation);
+                $prestationHistory = new PrestationHistory();
+                $prestationHistory
+                    ->setDate(new DateTime('now'))
+                    ->setStatut($this->statutHistoryRepository->findOneBy(['statut' => StatutHistory::DEMANDE]))
+                    ->setPrestation($prestation);
+                $this->em->persist($prestationHistory);
+                $this->em->flush();
+                $jsonContent['error'] = false;
+                $jsonContent['message'] = 'Votre demande a été envoyée au couturier.';
+            } else {
+                $jsonContent['message'] = 'error data';
+            }
         }
-
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
 
     /**
-     * @Route("/api/prestationAcccept", methods={"PATCH"})
+     * @Route("/accept", methods={"PUT"})
      */
     public function acceptPrestation(Request $request)
     {
@@ -124,7 +176,8 @@ class PrestationController
 
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $prestation = $this->prestationsRepository->findOneBy(['id' => $data['id']]);
-            $prestation->setAccept($data['accept'] ? Prestations::ACTIVE : Prestations::INACTIVE);
+            $prestation->setAccept($data['accept'] ? true : false);
+            $prestation->setState($data['accept'] ? Prestations::ACTIVE : Prestations::INACTIVE);
             $this->em->flush();
             $jsonContent['error'] = false;
             $jsonContent['message'] = $data['accept'] ? 'Prestation acceptée.' : 'Prestation déclinée.';

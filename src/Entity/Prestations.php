@@ -39,11 +39,6 @@ class Prestations
     private $state;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\UserPriceRetouching", inversedBy="descriptio")
-     */
-    private $userPriceRetouching;
-
-    /**
      * @ORM\Column(type="text", nullable=true)
      */
     private $description;
@@ -63,9 +58,20 @@ class Prestations
      */
     private $pay;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\UserPriceRetouching", inversedBy="prestations")
+     */
+    private $userPriceRetouching;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Message", mappedBy="prestation")
+     */
+    private $messages;
+
     public function __construct()
     {
         $this->prestationHistories = new ArrayCollection();
+        $this->messages = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -118,24 +124,12 @@ class Prestations
 
     public function getState(): ?string
     {
-        return $this->active;
+        return $this->state;
     }
 
-    public function setState(?string $active): self
+    public function setState(?string $state): self
     {
-        $this->active = $active;
-
-        return $this;
-    }
-
-    public function getUserPriceRetouching(): ?UserPriceRetouching
-    {
-        return $this->userPriceRetouching;
-    }
-
-    public function setUserPriceRetouching(?UserPriceRetouching $userPriceRetouching): self
-    {
-        $this->userPriceRetouching = $userPriceRetouching;
+        $this->state = $state;
 
         return $this;
     }
@@ -184,6 +178,49 @@ class Prestations
     public function setPay(?bool $pay): self
     {
         $this->pay = $pay;
+
+        return $this;
+    }
+
+    public function getUserPriceRetouching(): ?UserPriceRetouching
+    {
+        return $this->userPriceRetouching;
+    }
+
+    public function setUserPriceRetouching(?UserPriceRetouching $userPriceRetouching): self
+    {
+        $this->userPriceRetouching = $userPriceRetouching;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Message[]
+     */
+    public function getMessages(): Collection
+    {
+        return $this->messages;
+    }
+
+    public function addMessage(Message $message): self
+    {
+        if (!$this->messages->contains($message)) {
+            $this->messages[] = $message;
+            $message->setPrestation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMessage(Message $message): self
+    {
+        if ($this->messages->contains($message)) {
+            $this->messages->removeElement($message);
+            // set the owning side to null (unless already changed)
+            if ($message->getPrestation() === $this) {
+                $message->setPrestation(null);
+            }
+        }
 
         return $this;
     }

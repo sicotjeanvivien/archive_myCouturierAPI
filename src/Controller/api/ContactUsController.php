@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mime\Message;
 use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * @Route("/api/contactUs")
+ */
 
 class ContactUsController extends AbstractController
 {
@@ -38,7 +41,7 @@ class ContactUsController extends AbstractController
     }
 
     /**
-     * @Route("/api/ContactUs", methods={"POST"})
+     * @Route("/create", methods={"POST"})
      */
     public function contactUs(Request $request)
     {

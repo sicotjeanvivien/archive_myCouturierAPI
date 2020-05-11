@@ -117,12 +117,39 @@ class UserApp implements UserInterface
      */
     private $contactUs;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Message", mappedBy="author")
+     */
+    private $messages;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Commentary", mappedBy="author")
+     */
+    private $commentaries;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoUserId;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoWalletId;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $creationDate;
+
     public function __construct()
     {
         $this->userPriceRetouchings = new ArrayCollection();
         $this->prestations = new ArrayCollection();
         $this->message = new ArrayCollection();
         $this->contactUs = new ArrayCollection();
+        $this->messages = new ArrayCollection();
+        $this->commentaries = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -417,6 +444,104 @@ class UserApp implements UserInterface
                 $contactUs->setUserApp(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Message[]
+     */
+    public function getMessages(): Collection
+    {
+        return $this->messages;
+    }
+
+    public function addMessage(Message $message): self
+    {
+        if (!$this->messages->contains($message)) {
+            $this->messages[] = $message;
+            $message->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMessage(Message $message): self
+    {
+        if ($this->messages->contains($message)) {
+            $this->messages->removeElement($message);
+            // set the owning side to null (unless already changed)
+            if ($message->getAuthor() === $this) {
+                $message->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Commentary[]
+     */
+    public function getCommentaries(): Collection
+    {
+        return $this->commentaries;
+    }
+
+    public function addCommentary(Commentary $commentary): self
+    {
+        if (!$this->commentaries->contains($commentary)) {
+            $this->commentaries[] = $commentary;
+            $commentary->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCommentary(Commentary $commentary): self
+    {
+        if ($this->commentaries->contains($commentary)) {
+            $this->commentaries->removeElement($commentary);
+            // set the owning side to null (unless already changed)
+            if ($commentary->getAuthor() === $this) {
+                $commentary->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getMangoUserId(): ?string
+    {
+        return $this->mangoUserId;
+    }
+
+    public function setMangoUserId(?string $mangoUserId): self
+    {
+        $this->mangoUserId = $mangoUserId;
+
+        return $this;
+    }
+
+    public function getMangoWalletId(): ?string
+    {
+        return $this->mangoWalletId;
+    }
+
+    public function setMangoWalletId(?string $mangoWalletId): self
+    {
+        $this->mangoWalletId = $mangoWalletId;
+
+        return $this;
+    }
+
+    public function getCreationDate(): ?\DateTimeInterface
+    {
+        return $this->creationDate;
+    }
+
+    public function setCreationDate(?\DateTimeInterface $creationDate): self
+    {
+        $this->creationDate = $creationDate;
 
         return $this;
     }

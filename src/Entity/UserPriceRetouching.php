@@ -39,16 +39,6 @@ class UserPriceRetouching
     private $PriceShowClient;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PrestationHistory", mappedBy="retouching")
-     */
-    private $prestationHistories;
-
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Prestations", mappedBy="retouching")
-     */
-    private $prestations;
-
-    /**
      * @ORM\Column(type="integer", nullable=true)
      */
     private $deadline;
@@ -66,13 +56,11 @@ class UserPriceRetouching
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Prestations", mappedBy="userPriceRetouching")
      */
-    private $descriptio;
+    private $prestations;
 
     public function __construct()
     {
-        $this->prestationHistories = new ArrayCollection();
         $this->prestations = new ArrayCollection();
-        $this->descriptio = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -128,68 +116,6 @@ class UserPriceRetouching
         return $this;
     }
 
-    /**
-     * @return Collection|PrestationHistory[]
-     */
-    public function getPrestationHistories(): Collection
-    {
-        return $this->prestationHistories;
-    }
-
-    public function addPrestationHistory(PrestationHistory $prestationHistory): self
-    {
-        if (!$this->prestationHistories->contains($prestationHistory)) {
-            $this->prestationHistories[] = $prestationHistory;
-            $prestationHistory->setRetouching($this);
-        }
-
-        return $this;
-    }
-
-    public function removePrestationHistory(PrestationHistory $prestationHistory): self
-    {
-        if ($this->prestationHistories->contains($prestationHistory)) {
-            $this->prestationHistories->removeElement($prestationHistory);
-            // set the owning side to null (unless already changed)
-            if ($prestationHistory->getRetouching() === $this) {
-                $prestationHistory->setRetouching(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|Prestations[]
-     */
-    public function getPrestations(): Collection
-    {
-        return $this->prestations;
-    }
-
-    public function addPrestation(Prestations $prestation): self
-    {
-        if (!$this->prestations->contains($prestation)) {
-            $this->prestations[] = $prestation;
-            $prestation->setRetouching($this);
-        }
-
-        return $this;
-    }
-
-    public function removePrestation(Prestations $prestation): self
-    {
-        if ($this->prestations->contains($prestation)) {
-            $this->prestations->removeElement($prestation);
-            // set the owning side to null (unless already changed)
-            if ($prestation->getRetouching() === $this) {
-                $prestation->setRetouching(null);
-            }
-        }
-
-        return $this;
-    }
-
     public function getDeadline(): ?int
     {
         return $this->deadline;
@@ -229,31 +155,32 @@ class UserPriceRetouching
     /**
      * @return Collection|Prestations[]
      */
-    public function getDescriptio(): Collection
+    public function getPrestations(): Collection
     {
-        return $this->descriptio;
+        return $this->prestations;
     }
 
-    public function addDescriptio(Prestations $descriptio): self
+    public function addPrestation(Prestations $prestation): self
     {
-        if (!$this->descriptio->contains($descriptio)) {
-            $this->descriptio[] = $descriptio;
-            $descriptio->setUserPriceRetouching($this);
+        if (!$this->prestations->contains($prestation)) {
+            $this->prestations[] = $prestation;
+            $prestation->setUserPriceRetouching($this);
         }
 
         return $this;
     }
 
-    public function removeDescriptio(Prestations $descriptio): self
+    public function removePrestation(Prestations $prestation): self
     {
-        if ($this->descriptio->contains($descriptio)) {
-            $this->descriptio->removeElement($descriptio);
+        if ($this->prestations->contains($prestation)) {
+            $this->prestations->removeElement($prestation);
             // set the owning side to null (unless already changed)
-            if ($descriptio->getUserPriceRetouching() === $this) {
-                $descriptio->setUserPriceRetouching(null);
+            if ($prestation->getUserPriceRetouching() === $this) {
+                $prestation->setUserPriceRetouching(null);
             }
         }
 
         return $this;
     }
+
 }

@@ -8,6 +8,7 @@ use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
 use App\Service\PrestationsService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,9 +19,9 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 /**
- *@Route("/api") 
+ *@Route("/api/userPriceRetouching") 
  */
-class RetouchingController
+class RetouchingController extends AbstractController
 {
 
     private $em;
@@ -53,7 +54,7 @@ class RetouchingController
 
 
     /**
-     * @Route("/retouching", methods={"GET"})
+     * @Route("/", methods={"GET"})
      */
     public function retouchingShow(Request $request)
     {
@@ -81,7 +82,7 @@ class RetouchingController
 
 
     /**
-     * @Route("/retouching", methods={"PUT"})
+     * @Route("/", methods={"PUT"})
      */
     public function retouchingCreate(Request $request)
     {
