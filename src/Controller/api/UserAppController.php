@@ -68,9 +68,10 @@ class UserAppController extends AbstractController
 
             if (!$dataValide['error']) {
                 $userApp
-                    ->setFirstname(empty($data['firstname']) ? ' ' : $data['firstname'])
-                    ->setLastname(empty($data['lastname']) ? ' ' :  $data['lastname'])
-                    ->setEmail(empty($data['email']) ? ' ' : $data['email']);
+                    ->setFirstname(empty($data['firstname']) ? $userApp->getFirstname() : $data['firstname'])
+                    ->setLastname(empty($data['lastname']) ? $userApp->getLastname() :  $data['lastname'])
+                    ->setBio(empty($data['bio'] ? $userApp->getBio() : $data['bio']))
+                    ->setEmail(empty($data['email']) ? $userApp->getEmail() : $data['email']);
                 $this->em->flush($userApp);
                 $jsonContent['error'] = false;
                 $jsonContent['message'] = 'Information du compte mise à jour.';

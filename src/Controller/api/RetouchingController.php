@@ -6,17 +6,14 @@ use App\Entity\UserPriceRetouching;
 use App\Repository\RetouchingRepository;
 use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
+use App\Service\MangoPayService;
 use App\Service\PrestationsService;
 use Doctrine\ORM\EntityManagerInterface;
+use MangoPay\BankingAlias;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
 
 /**
  *@Route("/api/userPriceRetouching") 
@@ -35,21 +32,15 @@ class RetouchingController extends AbstractController
         RetouchingRepository $retouchingRepository,
         UserAppRepository $userAppRepository,
         UserPriceRetouchingRepository $userPriceRetouchingRepository,
-        PrestationsService $prestationsService
+        PrestationsService $prestationsService,
+        MangoPayService $mangoPayService
     ) {
         $this->em = $em;
+        $this->mangoPayService = $mangoPayService;
         $this->retouchingRepository = $retouchingRepository;
         $this->userAppRepository = $userAppRepository;
         $this->userPriceRetouchingRepository = $userPriceRetouchingRepository;
         $this->prestationsService = $prestationsService;
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $defaultContext = [
-            AbstractNormalizer::CIRCULAR_REFERENCE_HANDLER => function ($object, $format, $context) {
-                return $object->getType();
-            },
-        ];
-        $normalizer = new ObjectNormalizer(null, null, null, null, null, null, $defaultContext);
-        $this->serializer = new Serializer([$normalizer], $encoders);
     }
 
 
@@ -61,7 +52,7 @@ class RetouchingController extends AbstractController
 
         $retouching = $this->retouchingRepository->findAll();
         $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-        $jsonContent= [];
+        $jsonContent = [];
         foreach ($retouching as $retouche) {
             $priceCouturier = $this->userPriceRetouchingRepository->findOnePrice($retouche, $userApp);
             $jsonContent[] = [
@@ -72,7 +63,6 @@ class RetouchingController extends AbstractController
                 'value' => !empty($priceCouturier) ? strval($priceCouturier['PriceCouturier']) : '',
             ];
         }
-        // $jsonContent = $this->serializer->serialize($retouching, 'json');
         $response = new Response;
         $response
             ->setContent(json_encode($jsonContent))
@@ -82,7 +72,7 @@ class RetouchingController extends AbstractController
 
 
     /**
-     * @Route("/", methods={"PUT"})
+     * @Route("/", methods={"POST"})
      */
     public function retouchingCreate(Request $request)
     {
@@ -92,38 +82,61 @@ class RetouchingController extends AbstractController
             'error' => true,
             'message' => 'error server',
         ];
-        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') ==='application/json') {
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+
+            $mangoBankAccount = $this->mangoPayService->setMangoBankAccount($userApp->getMangoUserId(), $userApp->getAddress(), $data['bankAccount']);
+            $jsonContent['message'] = $mangoBankAccount;
+            if (isset($mangoBankAccount->Errors)) {
+                $jsonContent = [
+                    'error' => true,
+                    'message' => $mangoBankAccount,
+                ];
+                $response->setContent(json_encode($jsonContent));
+                return $response;
+            }
+
+            $bankAccountList = json_decode($userApp->getMangoBankAccountId());
+            $bankAccountList[] = $mangoBankAccount->Id;
+
+
             $userApp
-            ->setActiveCouturier($data['activeCouturier'])
-            ->setBio($data['bio']);
-            $jsonContent['error'] = false;
-            $jsonContent['message'] = 'information de profil mis à jour';
-            
-            if ($data['activeCouturier'] === $userApp->getActiveCouturier()) {
-                foreach ($data['retouche'] as $retouche) {
-                    if ($retouche['active']) {
-                        $retouching = $this->retouchingRepository->findOneBy(['id' => $retouche['id']]);
-                        $countUserPriceRetouching = $this->userPriceRetouchingRepository->countUserPriceRetouching($userApp, $retouching);
-                        $userPriceRetouching =  $this->userPriceRetouchingRepository->findOneBy(['UserApp' => $userApp, 'Retouching' => $retouching]);
-                        $priceClient = $this->prestationsService->calculPriceClient(intval($retouche['value']));
-                        if (intval($countUserPriceRetouching) === 1) {
-                            $userPriceRetouching
-                                ->setPriceCouturier(intval($retouche['value']))
-                                ->setPriceShowClient(intval($priceClient));
-                        } else if (intval($countUserPriceRetouching) < 1) {
-                            $newUserPriceRetouching = new UserPriceRetouching();
-                            $newUserPriceRetouching
-                                ->setRetouching($retouching)
-                                ->setUserApp($userApp)
-                                ->setPriceCouturier(intval($retouche['value']))
-                                ->setPriceShowClient(intval($priceClient));
-                            $this->em->persist($newUserPriceRetouching);
-                        }
+                ->setMangoBankAccountId(json_encode($bankAccountList))
+                ->setActiveCouturier($data['activeCouturier']);
+
+            foreach ($data['userRetouchingPrice'] as $retouche) {
+                if ($retouche['active']) {
+                    $retouching = $this->retouchingRepository->findOneBy(['id' => $retouche['id']]);
+                    $countUserPriceRetouching = $this->userPriceRetouchingRepository->countUserPriceRetouching($userApp, $retouching);
+                    $userPriceRetouching =  $this->userPriceRetouchingRepository->findOneBy(['UserApp' => $userApp, 'Retouching' => $retouching]);
+                    $priceClient = $this->prestationsService->calculPriceClient(intval($retouche['value']));
+                    if (intval($countUserPriceRetouching) === 1) {
+                        $userPriceRetouching
+                            ->setPriceCouturier(empty($retouche['value']) ? 0 : intval($retouche['value']))
+                            ->setTool(empty($retouche['tool']) ? null : intval($retouche['tool']))
+                            ->setDeadline(empty($retouche['deadline']) ? null : intval($retouche['deadline']))
+                            ->setCommitment(empty($retouche['commitment']) ? null : intval($retouche['commitment']))
+                            ->setSupplyCost(empty($retouche['supplyCost']) ? null : intval($retouche['supplyCost']))
+                            ->setPriceShowClient(intval($priceClient));
+                    } else if (intval($countUserPriceRetouching) < 1) {
+                        $newUserPriceRetouching = new UserPriceRetouching();
+                        $newUserPriceRetouching
+                            ->setRetouching($retouching)
+                            ->setUserApp($userApp)
+                            ->setPriceCouturier(empty($retouche['value']) ? 0 : intval($retouche['value']))
+                            ->setTool(empty($retouche['tool']) ? null : intval($retouche['tool']))
+                            ->setDeadline(empty($retouche['deadline']) ? null : intval($retouche['deadline']))
+                            ->setCommitment(empty($retouche['commitment']) ? null : intval($retouche['commitment']))
+                            ->setSupplyCost(empty($retouche['supplyCost']) ? null : intval($retouche['supplyCost']))
+                            ->setPriceShowClient(intval($priceClient));
+                        $this->em->persist($newUserPriceRetouching);
                     }
                 }
             }
             $this->em->flush();
+
+            $jsonContent['error'] = false;
+            $jsonContent['message'] = 'information de profil mis à jour';
         }
         $response->setContent(json_encode($jsonContent));
         return $response;

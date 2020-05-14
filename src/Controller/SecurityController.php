@@ -97,15 +97,34 @@ class SecurityController extends AbstractController
             if (!$valideDataAccount['error'] && !$validePassword['error']) {
                 $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
                 $mangoUser = $this->mangoPayService->setMangoUser($data);
+                if (isset($mangoUser->Errors)) {
+                    $jsonContent = [
+                        'error' => true,
+                        'message' => $mangoUser,
+                    ];
+                    $response->setContent(json_encode($jsonContent));
+                    return $response;
+                }
                 $mangoWallet = $this->mangoPayService->setMangoWallet($mangoUser->Id);
+                if (isset($mangoWallet->Errors)) {
+                    $jsonContent = [
+                        'error' => true,
+                        'message' => $mangoWallet,
+                    ];
+                    $response->setContent(json_encode($jsonContent));
+                    return $response;
+                }
                 $user
                     ->setUsername($user->getFirstname() . ' ' . $user->getLastname()[0])
                     ->setRoles(['ROLE_USER'])
                     ->setApitoken($this->securityService->tokenGenerator())
                     ->setPrivateMode(false)
-                    ->setCreationDate(new Date("now"))
+                    ->setCreationDate(new \DateTime('NOW'))
+                    ->setAddress($data['address'])
                     ->setMangoUserId($mangoUser->Id)
                     ->setMangoWalletId($mangoWallet->Id)
+                    ->setLongitude(isset($data['longitude']) ? floatval($data['longitude']) : 0)
+                    ->setLatitude(isset($data['latitude']) ? floatval($data['latitude']) : 0)
                     ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']));
 
                 $this->em->persist($user);

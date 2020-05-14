@@ -26,7 +26,7 @@ class UserApp implements UserInterface
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=180, unique=true)
+     * @ORM\Column(type="string", length=180)
      * @Groups({"group1"})
      */
     private $username;
@@ -141,6 +141,16 @@ class UserApp implements UserInterface
      * @ORM\Column(type="datetime", nullable=true)
      */
     private $creationDate;
+
+    /**
+     * @ORM\Column(type="json", nullable=true)
+     */
+    private $address = [];
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoBankAccountId;
 
     public function __construct()
     {
@@ -542,6 +552,30 @@ class UserApp implements UserInterface
     public function setCreationDate(?\DateTimeInterface $creationDate): self
     {
         $this->creationDate = $creationDate;
+
+        return $this;
+    }
+
+    public function getAddress(): ?array
+    {
+        return $this->address;
+    }
+
+    public function setAddress(?array $address): self
+    {
+        $this->address = $address;
+
+        return $this;
+    }
+
+    public function getMangoBankAccountId(): ?string
+    {
+        return $this->mangoBankAccountId;
+    }
+
+    public function setMangoBankAccountId(?string $mangoBankAccountId): self
+    {
+        $this->mangoBankAccountId = $mangoBankAccountId;
 
         return $this;
     }

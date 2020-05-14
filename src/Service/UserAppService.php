@@ -23,18 +23,19 @@ class UserAppService
         $id = empty($data['id']) ? null : rtrim(ltrim($data['id']));
         $firstname = rtrim(ltrim($data['firstname']));
         $lastname = rtrim(ltrim($data['lastname']));
+        $bio = rtrim(ltrim($data['bio']));
         $email = rtrim(ltrim($data['email']));
         $emailConfirm = rtrim(ltrim($data['emailConfirm']));
 
-        if (empty($firstname)) {
+        if (empty($firstname) || empty($lastname) ||empty($bio) ) {
             $error['error'] = true;
-            $error['message'] = $error['message'] . 'prénom non valide';
+            $error['message'] = $error['message'] . 'champs vide';
         }
-        if (empty($lastname)) {
-            $error['error'] = true;
-            $error['message'] = $error['message'] . ' nom non valide';
-        }
-        if (empty($email) || stristr($email, '@') === FALSE) {
+        if (
+            empty($email) ||
+            stristr($email, '@') === FALSE ||
+            ($this->userAppRepository->countUserByEmail($email)) > 0
+        ) {
             $error['error'] = true;
             $error['message'] = $error['message'] . ' email non valide';
         }

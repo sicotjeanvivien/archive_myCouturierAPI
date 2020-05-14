@@ -13,6 +13,7 @@ use App\Repository\RetouchingRepository;
 use App\Repository\StatutHistoryRepository;
 use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
+use App\Service\MangoPayService;
 use App\Service\PrestationsService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,7 +22,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- *@Route("/api") 
+ *@Route("/api/prestation") 
  */
 class PrestationController extends AbstractController
 {
@@ -41,11 +42,13 @@ class PrestationController extends AbstractController
         RetouchingRepository $retouchingRepository,
         UserPriceRetouchingRepository $userPriceRetouchingRepository,
         EntityManagerInterface $entityManagerInterface,
+        MangoPayService $mangoPayService,
         PrestationsService $prestationService,
         PrestationHistoryRepository $prestationHistoryRepository,
         MessageRepository $messageRepository
     ) {
         $this->em = $entityManagerInterface;
+        $this->mangoPayService = $mangoPayService;
         $this->statutHistoryRepository = $statutHistoryRepository;
         $this->prestationService = $prestationService;
         $this->userAppRepository = $userAppRepository;
@@ -57,7 +60,7 @@ class PrestationController extends AbstractController
     }
 
     /**
-     * @Route("/prestation", methods="GET")
+     * @Route("/", methods="GET")
      */
     public function prestationsShow(Request $request)
     {
@@ -81,7 +84,7 @@ class PrestationController extends AbstractController
     }
 
     /**
-     * @Route("/prestation/detail/{id}", methods="GET")
+     * @Route("/{id}", methods="GET")
      */
     public function prestationDetailClient(Request $request, $id)
     {
@@ -95,10 +98,13 @@ class PrestationController extends AbstractController
         $prestation = $this->prestationsRepository->findOneBy(['id' => $id]);
         $prestationHistory = $this->prestationHistoryRepository->findAllByPrestation($prestation);
         $message = $this->messageRepository->findAllByPrestation($prestation);
-        if ($request->headers->get('Content-Type') === 'application/json' && !empty($prestation) && !empty($prestationHistory) && !empty($message) ) {
+
+        dump(!empty($prestation), !empty($prestationHistory), !empty($message));
+
+        if ($request->headers->get('Content-Type') === 'application/json' && !empty($prestation)) {
 
             $jsonContent['prestation'] = [
-                'id'=> $prestation->getId(),
+                'id' => $prestation->getId(),
                 'client' => $prestation->getClient()->getUsername(),
                 'couturier' => $prestation->getUserPriceRetouching()->getUserApp()->getUsername(),
                 'state' => $prestation->getState() ? $prestation->getState() : null,
@@ -122,7 +128,7 @@ class PrestationController extends AbstractController
     }
 
     /**
-     * @Route("/prestation", methods="POST")
+     * @Route("/", methods="POST")
      */
     public function create(Request $request)
     {
@@ -163,7 +169,7 @@ class PrestationController extends AbstractController
     }
 
     /**
-     * @Route("/accept", methods={"PUT"})
+     * @Route("/accept", methods={"PATCH"})
      */
     public function acceptPrestation(Request $request)
     {
@@ -178,6 +184,13 @@ class PrestationController extends AbstractController
             $prestation = $this->prestationsRepository->findOneBy(['id' => $data['id']]);
             $prestation->setAccept($data['accept'] ? true : false);
             $prestation->setState($data['accept'] ? Prestations::ACTIVE : Prestations::INACTIVE);
+            $statut = $this->statutHistoryRepository->findOneBy(['statut' => StatutHistory::ACCEPT]);
+            $prestationHistory = new PrestationHistory();
+            $prestationHistory
+                ->setDate(new DateTime('now'))
+                ->setStatut(isset($statut) ? $statut : null)
+                ->setPrestation($prestation);
+            $this->em->persist($prestationHistory);
             $this->em->flush();
             $jsonContent['error'] = false;
             $jsonContent['message'] = $data['accept'] ? 'Prestation acceptée.' : 'Prestation déclinée.';

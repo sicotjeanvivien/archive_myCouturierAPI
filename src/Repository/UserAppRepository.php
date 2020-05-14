@@ -100,6 +100,21 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         // returns an array of Product objects
         return $query->getResult();
     }
+
+    public function countUserByEmail($email)
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            "SELECT count(a)
+            FROM App\Entity\UserApp a
+            WHERE a.email = :email  
+        "
+        )->setParameter('email',$email);
+
+        // returns an array of Product objects
+        return $query->getSingleScalarResult();
+    }
 }
 
     // /**

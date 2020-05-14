@@ -61,6 +61,16 @@ class ConfigApp
      */
     private $adminEmail;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoPayClientId;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoPayApiKey;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -170,6 +180,30 @@ class ConfigApp
     public function setAdminEmail(?string $adminEmail): self
     {
         $this->adminEmail = $adminEmail;
+
+        return $this;
+    }
+
+    public function getMangoPayClientId(): ?string
+    {
+        return $this->mangoPayClientId;
+    }
+
+    public function setMangoPayClientId(?string $mangoPayClientId): self
+    {
+        $this->mangoPayClientId = $mangoPayClientId;
+
+        return $this;
+    }
+
+    public function getMangoPayApiKey(): ?string
+    {
+        return $this->mangoPayApiKey;
+    }
+
+    public function setMangoPayAoiKey(?string $mangoPayApiKey): self
+    {
+        $this->mangoPayAoiKey = $mangoPayApiKey;
 
         return $this;
     }

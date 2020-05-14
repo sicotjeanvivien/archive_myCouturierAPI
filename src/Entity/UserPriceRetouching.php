@@ -34,7 +34,7 @@ class UserPriceRetouching
     private $PriceCouturier;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", nullable=true)
      */
     private $PriceShowClient;
 
@@ -57,6 +57,11 @@ class UserPriceRetouching
      * @ORM\OneToMany(targetEntity="App\Entity\Prestations", mappedBy="userPriceRetouching")
      */
     private $prestations;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $supplyCost;
 
     public function __construct()
     {
@@ -179,6 +184,18 @@ class UserPriceRetouching
                 $prestation->setUserPriceRetouching(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getSupplyCost(): ?string
+    {
+        return $this->supplyCost;
+    }
+
+    public function setSupplyCost(?string $supplyCost): self
+    {
+        $this->supplyCost = $supplyCost;
 
         return $this;
     }
