@@ -54,6 +54,7 @@ class MessageController extends AbstractController
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $message = new Message;
             $message = $this->messageService->set($message, $data, $request->headers->get('X-AUTH-TOKEN'));
+            
             if ($message) {
                 $this->em->persist($message);
                 $this->em->flush();

@@ -157,7 +157,6 @@ class MangoPayController extends AbstractController
             if (isset($payInCardDirect->Status)) {
                 $prestation->setPay(true);
                 $statut = $this->statutHistoryRepository->findOneBy(['statut' => StatutHistory::PAY]);
-                dump($statut);
                 $presatationHistory = new PrestationHistory();
                 $presatationHistory
                     ->setPrestation($prestation)
