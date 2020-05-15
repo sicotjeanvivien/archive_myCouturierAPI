@@ -3,6 +3,7 @@
 namespace App\Controller\api;
 
 use App\Entity\Message;
+use App\Entity\Prestations;
 use App\Repository\MessageRepository;
 use App\Repository\PrestationsRepository;
 use App\Repository\UserAppRepository;
@@ -38,6 +39,26 @@ class MessageController extends AbstractController
         $this->prestationsRespository = $prestationsRespository;
         $this->messageRepository = $messageRepository;
         $this->messageService = $messageService;
+    }
+
+    /**
+     * @Route("/{id}", methods={"GET"})
+     */
+    public function listMessageByPrestation($id)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'error server',
+        ];
+       
+        $prestation = $this->prestationsRespository->findOneBy(['id'=>$id]);
+        $messages = $this->messageRepository->findAllByPrestation($prestation);
+        $jsonContent['message']= $messages;
+        
+        $response->setContent(json_encode($jsonContent));
+        return $response;
     }
 
     /**

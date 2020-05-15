@@ -15,11 +15,13 @@ use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
 use App\Service\MangoPayService;
 use App\Service\PrestationsService;
+use App\Service\SecurityService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Validator\Constraints\Date;
 
 /**
  *@Route("/api/prestation") 
@@ -33,6 +35,8 @@ class PrestationController extends AbstractController
     private $prestationService;
     private $statutHistoryRepository;
     private $messageRepository;
+    private $securityService;
+    private $mangoPayService;
     private $em;
 
     public function __construct(
@@ -45,9 +49,11 @@ class PrestationController extends AbstractController
         MangoPayService $mangoPayService,
         PrestationsService $prestationService,
         PrestationHistoryRepository $prestationHistoryRepository,
-        MessageRepository $messageRepository
+        MessageRepository $messageRepository,
+        SecurityService $securityService
     ) {
         $this->em = $entityManagerInterface;
+        $this->securityService = $securityService;
         $this->mangoPayService = $mangoPayService;
         $this->statutHistoryRepository = $statutHistoryRepository;
         $this->prestationService = $prestationService;
@@ -194,6 +200,79 @@ class PrestationController extends AbstractController
             $this->em->flush();
             $jsonContent['error'] = false;
             $jsonContent['message'] = $data['accept'] ? 'Prestation acceptée.' : 'Prestation déclinée.';
+        }
+
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/congirmCode/{id}", methods={"GET"})
+     */
+    public function showConfirmCode(Request $request, $id)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'error server',
+        ];
+        $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+        $prestation = $this->prestationsRepository->findOneBy(['id' => $id]);
+        $code = $prestation->getCodeConfirm() !== null ? $prestation->getCodeConfirm() : $this->securityService->codeConfirm();
+        $prestation->setCodeConfirm($code);
+        $this->em->flush();
+
+        $jsonContent['code'] = $code;
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/congirmCode", methods={"POST"})
+     */
+    public function confirmCode(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $prestation = $this->prestationsRepository->findOneBy(['id' => $data['prestationId']]);
+            $jsonContent['transfer'] = empty($prestation->getMangoPayTransferId());
+            $codePresta = $prestation->getCodeConfirm();
+            $jsonContent['message'] = 'code invalide';
+            if ($codePresta === $data['code'] && $prestation->getState() === Prestations::ACTIVE) {
+
+                $mangoPayTransfert = $this->mangoPayService->transfer(
+                    $prestation->getUserPriceRetouching()->getUserApp()->getMangoUserId(),
+                    $prestation->getUserPriceRetouching()->getPriceCouturier(),
+                    0,
+                    $prestation->getClient()->getMangoWalletId(),
+                    $prestation->getUserPriceRetouching()->getUserApp()->getMangoWalletId()
+                );
+                $jsonContent['transfer'] = $mangoPayTransfert;
+
+                if ($mangoPayTransfert->Status === "SUCCEDED") {
+                    $statut = $this->statutHistoryRepository->findOneBy(['statut' => StatutHistory::FINISHED]);
+                    $prestation->setState(Prestations::INACTIVE);
+
+                    $prestationHistory = new PrestationHistory();
+                    $prestationHistory
+                        ->setDate(new DateTime('now'))
+                        ->setStatut(isset($statut) ? $statut : null)
+                        ->setPrestation($prestation);
+                    $this->em->persist($prestationHistory);
+                    $this->em->flush();
+
+                    $jsonContent['message'] = 'code valide';
+                    $jsonContent['transfer'] = $mangoPayTransfert;
+                }
+            }
+            // $jsonContent['error'] = false;
+            // $jsonContent['transfer'] = ['Statut'=>'SUCCEDED'];
         }
 
         $response->setContent(json_encode($jsonContent));

@@ -15,6 +15,7 @@ class StatutHistory
     public const DEMANDE = 'création';
     public const ACCEPT = 'acceptaion';
     public const PAY = 'payé';
+    public const FINISHED = 'finalisé';
 
     /**
      * @ORM\Id()

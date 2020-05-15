@@ -22,7 +22,7 @@ class MessageRepository extends ServiceEntityRepository
     public function findAllByPrestation($prestation)
     {
         $query = $this->getEntityManager()->createQuery(
-            "SELECT m.editedDate, m.message, a.username
+            "SELECT m.editedDate, m.message, a.username, a.imageProfil
             FROM App\Entity\Message m
             JOIN m.author a
             WHERE m.prestation = :prestation 

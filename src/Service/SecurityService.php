@@ -22,4 +22,16 @@ class SecurityService
 
         return $password;
     }
+
+    public function codeConfirm()
+    {
+        $code = '';
+        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $max = mb_strlen($keyspace, '8bit') - 1;
+        for ($i = 0; $i < 4; ++$i) {
+            $code .= $keyspace[random_int(0, $max)];
+        }
+
+        return $code;
+    }
 }

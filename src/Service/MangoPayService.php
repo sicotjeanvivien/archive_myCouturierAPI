@@ -88,8 +88,10 @@ class MangoPayService
             $mangoBankAccount->Details = new MangoPay\BankAccountDetailsIBAN();
             $mangoBankAccount->Details->IBAN = empty($data['IBAN']) ? null : $data['IBAN'];
             $mangoBankAccount->Details->BIC = empty($data['BIC']) ? null : $data['BIC'];
+            
             $mangoBankAccount = $this->mangoPayApi->Users->CreateBankAccount($mangoUserId, $mangoBankAccount);
             return $mangoBankAccount;
+
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -106,8 +108,10 @@ class MangoPayService
             $mangoCardRegistration->UserId = $mangoUserId;
             $mangoCardRegistration->CardType = "CB_VISA_MASTERCARD";
             $mangoCardRegistration->Currency = "EUR";
+            
             $mangoCardRegistration = $this->mangoPayApi->CardRegistrations->Create($mangoCardRegistration);
             return $mangoCardRegistration;
+
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -123,8 +127,10 @@ class MangoPayService
             $mangoCardRegistration = new \MangoPay\CardRegistration();
             $mangoCardRegistration->Id = $regId;
             $mangoCardRegistration->RegistrationData = $regData;
+            
             $mangoCardRegistration = $this->mangoPayApi->CardRegistrations->Update($mangoCardRegistration);
             return $mangoCardRegistration;
+        
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -164,10 +170,35 @@ class MangoPayService
             $payInCardDirect->Fees->Amount = $fees;
             $payInCardDirect->ExecutionType = \MangoPay\PayInExecutionType::Direct;
             $payInCardDirect->ExecutionDetails = new \MangoPay\PayInExecutionDetailsDirect();
-            $payInCardDirect->ExecutionDetails->SecureModeReturnURL = "http".(isset($_SERVER['HTTPS']) ? "s" : null)."://".$_SERVER["HTTP_HOST"].$urlReturn;
+            $payInCardDirect->ExecutionDetails->SecureModeReturnURL = "http" . (isset($_SERVER['HTTPS']) ? "s" : null) . "://" . $_SERVER["HTTP_HOST"] . $urlReturn;
             $payInCardDirect->ExecutionDetails->CardId = $mangoCardId;
-            $result = $this->mangoPayApi->PayIns->Create($payInCardDirect);
 
+            $result = $this->mangoPayApi->PayIns->Create($payInCardDirect);
+            return $result;
+
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+    /**
+     * Transfer MangoPay Wallet by Wallet
+     * @return transfer $transfer
+     */
+    public function transfer($author ,$debit, $fees, $clientWallet, $couturierWallet)
+    {
+        try {            
+            $transfer = new \MangoPay\Transfer();
+            $transfer->AuthorId = $author;
+            $transfer->DebitedFunds = new \MangoPay\Money();
+            $transfer->DebitedFunds->Currency = 'EUR';
+            $transfer->DebitedFunds->Amount = $debit;
+            $transfer->Fees = new \MangoPay\Money();
+            $transfer->Fees->Currency = "EUR";
+            $transfer->Fees->Amount = $fees;
+            $transfer->DebitedWalletID = $clientWallet;
+            $transfer->CreditedWalletId = $couturierWallet;
+            
+            $result = $this->mangoPayApi->Transfers->Create($transfer);
             return $result;
 
         } catch (MangoPay\Libraries\ResponseException $e) {

@@ -68,6 +68,16 @@ class Prestations
      */
     private $messages;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $codeConfirm;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoPayTransferId;
+
     public function __construct()
     {
         $this->prestationHistories = new ArrayCollection();
@@ -225,4 +235,27 @@ class Prestations
         return $this;
     }
 
+    public function getCodeConfirm(): ?string
+    {
+        return $this->codeConfirm;
+    }
+
+    public function setCodeConfirm(?string $codeConfirm): self
+    {
+        $this->codeConfirm = $codeConfirm;
+
+        return $this;
+    }
+
+    public function getMangoPayTransferId(): ?string
+    {
+        return $this->codeConfirm;
+    }
+
+    public function setMangoPayTransferId(?string $codeConfirm): self
+    {
+        $this->codeConfirm = $codeConfirm;
+
+        return $this;
+    }
 }
