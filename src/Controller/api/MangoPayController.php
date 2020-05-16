@@ -79,6 +79,63 @@ class MangoPayController extends AbstractController
         return $response;
     }
 
+    /**
+     * @Route("/bankAccounts", methods={"GET"})
+     */
+    public function listBankAccounts(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'server error',
+        ];
+        $user = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+        dump($this->mangoPayService->listBankAccounts($user->getMangoUserId()));
+        $jsonContent['bankAccounts'] = $this->mangoPayService->listBankAccounts($user->getMangoUserId());
+
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/bankAccounts", methods={"POST"})
+     */
+    public function createBankAccounts(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'server error',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+
+            $mangoBankAccount = $this->mangoPayService->setMangoBankAccount($userApp->getMangoUserId(), $userApp->getAddress(), $data['bankAccount']);
+            $jsonContent['message'] = $mangoBankAccount;
+            if (isset($mangoBankAccount->Errors)) {
+                $jsonContent = [
+                    'error' => true,
+                    'bankAccount' => $mangoBankAccount,
+                ];
+                $response->setContent(json_encode($jsonContent));
+                return $response;
+            }
+            $bankAccountList = json_decode($userApp->getMangoBankAccountId());
+            $bankAccountList[] = $mangoBankAccount->Id;
+            $userApp
+                ->setMangoBankAccountId(json_encode($bankAccountList))
+                ->setActiveCouturier($data['activeCouturier']);
+            $this->em->flush();
+
+            $jsonContent['error'] = false;
+            $jsonContent['message'] = 'information de profil mis à jour';
+        }
+
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
 
     /**
      * @Route("/createToken", methods={"GET"})
@@ -113,7 +170,6 @@ class MangoPayController extends AbstractController
      */
     public function putTokenDatas(Request $request)
     {
-
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
         $jsonContent = [
@@ -147,12 +203,11 @@ class MangoPayController extends AbstractController
             $mangoUserId = $client->getMangoUserId();
             $mangoWalletId = $client->getMangoWalletId();
             $mangoCardId = $data['cardId'];
-            $debit = ($prestation->getUserPriceRetouching()->getPriceShowClient()) * 100;
-            $fees = ($prestation->getUserPriceRetouching()->getPriceShowClient() - $prestation->getUserPriceRetouching()->getPriceCouturier()) * 100;
+            $debit = ($prestation->getUserPriceRetouching()->getPriceShowClient());
+            $fees = ($prestation->getUserPriceRetouching()->getPriceShowClient() - $prestation->getUserPriceRetouching()->getPriceCouturier());
             $urlReturn = $this->generateUrl('3Dsecure');
 
             $payInCardDirect = $this->mangoPayService->payInCardDirect($mangoUserId, $mangoWalletId, $mangoCardId, $debit, $fees, $urlReturn);
-            // dump($payInCardDirect);
 
             if (isset($payInCardDirect->Status)) {
                 $prestation->setPay(true);
@@ -190,6 +245,58 @@ class MangoPayController extends AbstractController
             'message' => $request,
         ];
 
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/wallet", methods={"GET"})
+     */
+    public function showWallet(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'server error',
+        ];
+        $user = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+        dump($this->mangoPayService->getWallet($user->getMangoWalletId()));
+
+        $jsonContent['wallet'] = $this->mangoPayService->getWallet($user->getMangoWalletId());
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     *@Route("/payOutBankWire", methods={"POST"})  
+     */
+    public function payOutBankWire(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'server error',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $client = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+
+            $mangoUserId = $client->getMangoUserId();
+            $mangoWalletId = $client->getMangoWalletId();
+            $mangoBankAccountId = $data['bankAccountId'];
+            $debitAmout = $data['debitAmount'];
+            $payOut = $this->mangoPayService->payOutBankWire($mangoUserId, $mangoWalletId, $debitAmout, $mangoBankAccountId);
+
+            $jsonContent['payOut']= $payOut;
+
+            if ($payOut->Status === \MangoPay\PayOutStatus::Succeeded) {
+                $jsonContent = [
+                    'error' => false,
+                    'message' => 'Virement effectué.',
+                ];
+            }
+        }
         $response->setContent(json_encode($jsonContent));
         return $response;
     }

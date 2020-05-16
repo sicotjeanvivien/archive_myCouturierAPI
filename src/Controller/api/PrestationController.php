@@ -78,8 +78,8 @@ class PrestationController extends AbstractController
         ];
         $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
         if ($userApp) {
-            $jsonContent['client'] = $this->prestationService->prestaClient($userApp);
-            $jsonContent['couturier'] = $this->prestationService->prestaCouturier($userApp);
+            $jsonContent['client'] = $this->prestationService->prestaClient($userApp->getId());
+            $jsonContent['couturier'] = $this->prestationService->prestaCouturier($userApp->getId());
             $jsonContent['error'] = false;
             $jsonContent['message'] = "it's ok";
         }
@@ -247,7 +247,7 @@ class PrestationController extends AbstractController
             if ($codePresta === $data['code'] && $prestation->getState() === Prestations::ACTIVE) {
 
                 $mangoPayTransfert = $this->mangoPayService->transfer(
-                    $prestation->getUserPriceRetouching()->getUserApp()->getMangoUserId(),
+                    $prestation->getClient()->getMangoUserId(),
                     $prestation->getUserPriceRetouching()->getPriceCouturier(),
                     0,
                     $prestation->getClient()->getMangoWalletId(),
@@ -255,9 +255,9 @@ class PrestationController extends AbstractController
                 );
                 $jsonContent['transfer'] = $mangoPayTransfert;
 
-                if ($mangoPayTransfert->Status === "SUCCEDED") {
+                if ($mangoPayTransfert->Status === \MangoPay\TransactionStatus::Succeeded) {
                     $statut = $this->statutHistoryRepository->findOneBy(['statut' => StatutHistory::FINISHED]);
-                    $prestation->setState(Prestations::INACTIVE);
+                    $prestation->setMangoPayTransferId($mangoPayTransfert->Id)->setState(Prestations::INACTIVE);
 
                     $prestationHistory = new PrestationHistory();
                     $prestationHistory
@@ -267,12 +267,13 @@ class PrestationController extends AbstractController
                     $this->em->persist($prestationHistory);
                     $this->em->flush();
 
-                    $jsonContent['message'] = 'code valide';
-                    $jsonContent['transfer'] = $mangoPayTransfert;
+                    $jsonContent = [
+                        'error'=> false,
+                        'message' => 'code valide',
+                        'transfer' => $mangoPayTransfert
+                    ];
                 }
             }
-            // $jsonContent['error'] = false;
-            // $jsonContent['transfer'] = ['Statut'=>'SUCCEDED'];
         }
 
         $response->setContent(json_encode($jsonContent));

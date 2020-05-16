@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  *@Route("/api/userPriceRetouching") 
  */
-class RetouchingController extends AbstractController
+class UserPriceRetouchingController extends AbstractController
 {
 
     private $em;
@@ -43,24 +43,28 @@ class RetouchingController extends AbstractController
         $this->prestationsService = $prestationsService;
     }
 
-
     /**
      * @Route("/", methods={"GET"})
      */
-    public function retouchingShow(Request $request)
+    public function show(Request $request)
     {
 
         $retouching = $this->retouchingRepository->findAll();
         $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
         $jsonContent = [];
         foreach ($retouching as $retouche) {
-            $priceCouturier = $this->userPriceRetouchingRepository->findOnePrice($retouche, $userApp);
+            $userPriceRetouching= $this->userPriceRetouchingRepository->findOneBy(['Retouching'=> $retouche, 'UserApp'=> $userApp]);
+            dump($userPriceRetouching);
             $jsonContent[] = [
                 'id' => !empty($retouche->getId()) ? $retouche->getId() : '',
                 'CategoryRetouching' => !empty($retouche->getCategoryRetouching()->getType()) ? $retouche->getCategoryRetouching()->getType() : '',
                 'type' => !empty($retouche->getType()) ? $retouche->getType() : '',
                 'description' => !empty($retouche->getDescription()) ? $retouche->getDescription() : '',
-                'value' => !empty($priceCouturier) ? strval($priceCouturier['PriceCouturier']) : '',
+                'supplyCost'=>!empty($userPriceRetouching) ? $userPriceRetouching->getSupplyCost():'',
+                'daedline'=>!empty($userPriceRetouching) ?$userPriceRetouching->getDeadline():'',
+                'tool'=> !empty($userPriceRetouching) ?$userPriceRetouching->getTool():'',
+                'commitment'=> !empty($userPriceRetouching) ? $userPriceRetouching->getCommitment() : '',
+                'value' => !empty($userPriceRetouching) ? strval($userPriceRetouching->getPriceCouturier()) : '',
             ];
         }
         $response = new Response;
@@ -70,11 +74,10 @@ class RetouchingController extends AbstractController
         return $response;
     }
 
-
     /**
      * @Route("/", methods={"POST"})
      */
-    public function retouchingCreate(Request $request)
+    public function create(Request $request)
     {
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');

@@ -88,10 +88,9 @@ class MangoPayService
             $mangoBankAccount->Details = new MangoPay\BankAccountDetailsIBAN();
             $mangoBankAccount->Details->IBAN = empty($data['IBAN']) ? null : $data['IBAN'];
             $mangoBankAccount->Details->BIC = empty($data['BIC']) ? null : $data['BIC'];
-            
+
             $mangoBankAccount = $this->mangoPayApi->Users->CreateBankAccount($mangoUserId, $mangoBankAccount);
             return $mangoBankAccount;
-
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -108,10 +107,9 @@ class MangoPayService
             $mangoCardRegistration->UserId = $mangoUserId;
             $mangoCardRegistration->CardType = "CB_VISA_MASTERCARD";
             $mangoCardRegistration->Currency = "EUR";
-            
+
             $mangoCardRegistration = $this->mangoPayApi->CardRegistrations->Create($mangoCardRegistration);
             return $mangoCardRegistration;
-
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -127,10 +125,9 @@ class MangoPayService
             $mangoCardRegistration = new \MangoPay\CardRegistration();
             $mangoCardRegistration->Id = $regId;
             $mangoCardRegistration->RegistrationData = $regData;
-            
+
             $mangoCardRegistration = $this->mangoPayApi->CardRegistrations->Update($mangoCardRegistration);
             return $mangoCardRegistration;
-        
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -145,6 +142,20 @@ class MangoPayService
         try {
             $listCard = $this->mangoPayApi->Users->GetCards($mangoUserId);
             return $listCard;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * List MangoPay BankAccount
+     * @return BankAccount $bankAccount
+     */
+    public function listBankAccounts($mangoUserId)
+    {
+        try {
+            $bankAccount = $this->mangoPayApi->Users->GetBankAccounts($mangoUserId);
+            return $bankAccount;
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
@@ -175,18 +186,18 @@ class MangoPayService
 
             $result = $this->mangoPayApi->PayIns->Create($payInCardDirect);
             return $result;
-
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
     }
+
     /**
      * Transfer MangoPay Wallet by Wallet
      * @return transfer $transfer
      */
-    public function transfer($author ,$debit, $fees, $clientWallet, $couturierWallet)
+    public function transfer($author, $debit, $fees, $clientWallet, $couturierWallet)
     {
-        try {            
+        try {
             $transfer = new \MangoPay\Transfer();
             $transfer->AuthorId = $author;
             $transfer->DebitedFunds = new \MangoPay\Money();
@@ -197,10 +208,50 @@ class MangoPayService
             $transfer->Fees->Amount = $fees;
             $transfer->DebitedWalletID = $clientWallet;
             $transfer->CreditedWalletId = $couturierWallet;
-            
+
             $result = $this->mangoPayApi->Transfers->Create($transfer);
             return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
 
+    /**
+     * GetWallet MangoPay
+     * @return wallet $wallet
+     */
+    public function getWallet($walletId)
+    {
+        try {
+            $result = $this->mangoPayApi->Wallets->Get($walletId);
+            return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * PayOutBankWire mangoPay
+     * @return PayOutBankWire  $payOutBankWire
+     */
+    public function PayOutBankWire($mangoUserId, $mangoWalletId, $debitAmount, $mangoBankAccountId)
+    {
+        try {
+            $payOutBankWire = new \MangoPay\PayOut();
+            $payOutBankWire->AuthorId = $mangoUserId;
+            $payOutBankWire->DebitedWalletId = $mangoWalletId;
+            $payOutBankWire->DebitedFunds = new \MangoPay\Money();
+            $payOutBankWire->DebitedFunds->Currency = "EUR";
+            $payOutBankWire->DebitedFunds->Amount = $debitAmount;
+            $payOutBankWire->Fees = new \MangoPay\Money();
+            $payOutBankWire->Fees->Currency = "EUR";
+            $payOutBankWire->Fees->Amount = 0;
+            $payOutBankWire->PaymentType = \MangoPay\PayOutPaymentType::BankWire;
+            $payOutBankWire->MeanOfPaymentDetails = new \MangoPay\PayOutPaymentDetailsBankWire();
+            $payOutBankWire->MeanOfPaymentDetails->BankAccountId = $mangoBankAccountId;
+
+            $result = $this->mangoPayApi->PayOuts->Create($payOutBankWire);
+            return $result;
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
         }
