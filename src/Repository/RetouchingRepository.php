@@ -19,32 +19,15 @@ class RetouchingRepository extends ServiceEntityRepository
         parent::__construct($registry, Retouching::class);
     }
 
-    // /**
-    //  * @return Retouching[] Returns an array of Retouching objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    public function findAllRetouche()
     {
-        return $this->createQueryBuilder('r')
-            ->andWhere('r.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('r.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
+        $query = $this->getEntityManager()->createQuery(
+            "SELECT r.id, r.type, r.description, cr.type as category
+            FROM App\Entity\Retouching r
+            JOIN r.CategoryRetouching cr
+            "
+        );
+        return $query->getResult();
+        
     }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Retouching
-    {
-        return $this->createQueryBuilder('r')
-            ->andWhere('r.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

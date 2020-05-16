@@ -154,7 +154,14 @@ class MangoPayService
     public function listBankAccounts($mangoUserId)
     {
         try {
-            $bankAccount = $this->mangoPayApi->Users->GetBankAccounts($mangoUserId);
+            $active = true;
+            $pagination = new \MangoPay\Pagination();
+            $pagination->TotalItems = 100;
+            $sorting = new \MangoPay\Sorting();
+            $sorting->AddField('CreationDate', 'asc');
+            $filterBankAccount = new \MangoPay\FilterBankAccounts();
+            $filterBankAccount->Active = "true";
+            $bankAccount = $this->mangoPayApi->Users->GetBankAccounts($mangoUserId, $pagination, $sorting, $filterBankAccount);
             return $bankAccount;
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
@@ -251,6 +258,41 @@ class MangoPayService
             $payOutBankWire->MeanOfPaymentDetails->BankAccountId = $mangoBankAccountId;
 
             $result = $this->mangoPayApi->PayOuts->Create($payOutBankWire);
+            return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * Deactivate Card
+     * @return Card $card
+     */
+    public function deactivateCard($mangoCardId)
+    {
+        try {
+            $card = new \MangoPay\Card();
+            $card->Id = $mangoCardId;
+            $card->Active = false;
+            $result = $this->mangoPayApi->Cards->Update($card);
+            return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * Deactivate BankAccount
+     * @return BankAccount $bankAccount
+     */
+    public function deactivateBankAccount($mangoUserId, $mangoBankAccountId)
+    {
+        try {
+            $bankAccount = $this->mangoPayApi->Users->GetBankAccount($mangoUserId, $mangoBankAccountId);
+            $bankAccount->Active = false;
+            dump('he');
+            $result = $this->mangoPayApi->Users->UpdateBankAccount($mangoUserId, $bankAccount);
+            dump('hel');
             return $result;
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();

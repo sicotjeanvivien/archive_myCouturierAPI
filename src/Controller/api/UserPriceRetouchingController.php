@@ -48,14 +48,20 @@ class UserPriceRetouchingController extends AbstractController
      */
     public function show(Request $request)
     {
+        $response = new Response;
+        $jsonContent = [
+            'error' => false,
+            'message' => 'error server',
+        ];
 
         $retouching = $this->retouchingRepository->findAll();
         $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-        $jsonContent = [];
+        $jsonContent['cool'] = 'lololol';
+        $retouches = [];
         foreach ($retouching as $retouche) {
-            $userPriceRetouching= $this->userPriceRetouchingRepository->findOneBy(['Retouching'=> $retouche, 'UserApp'=> $userApp]);
+            $userPriceRetouching = $this->userPriceRetouchingRepository->findOneBy(['Retouching' => $retouche, 'UserApp' => $userApp]);
             dump($userPriceRetouching);
-            $jsonContent[] = [
+            $retouches[] = [
                 'id' => !empty($retouche->getId()) ? $retouche->getId() : '',
                 'CategoryRetouching' => !empty($retouche->getCategoryRetouching()->getType()) ? $retouche->getCategoryRetouching()->getType() : '',
                 'type' => !empty($retouche->getType()) ? $retouche->getType() : '',
@@ -67,7 +73,8 @@ class UserPriceRetouchingController extends AbstractController
                 'value' => !empty($userPriceRetouching) ? strval($userPriceRetouching->getPriceCouturier()) : '',
             ];
         }
-        $response = new Response;
+
+        $jsonContent['userPriceRetouches'] = $retouches;
         $response
             ->setContent(json_encode($jsonContent))
             ->headers->set('Content-Type', 'application/json');

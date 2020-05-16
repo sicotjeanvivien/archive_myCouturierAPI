@@ -138,7 +138,34 @@ class MangoPayController extends AbstractController
     }
 
     /**
-     * @Route("/createToken", methods={"GET"})
+     * @Route("/bankAccounts", methods={"DELETE"})
+     */
+    public function deleteBankAccounts(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'server error',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+            $bankAccount = $this->mangoPayService->deactivateBankAccount($userApp->getMangoUserId() ,$data['bankAccountId']);
+            dump($bankAccount);
+            if (!$bankAccount->Active) {
+                $jsonContent=[
+                    'error'=> false,
+                    'message'=> 'carte desactivé'
+                ];
+            }
+        }
+
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/card", methods={"GET"})
      */
     public function createTokenCardRegistration(Request $request)
     {
@@ -166,7 +193,7 @@ class MangoPayController extends AbstractController
     }
 
     /**
-     * @Route("/createToken", methods={"PUT"})
+     * @Route("/card", methods={"PUT"})
      */
     public function putTokenDatas(Request $request)
     {
@@ -184,6 +211,32 @@ class MangoPayController extends AbstractController
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
+   
+    /**
+     * @Route("/card", methods={"DELETE"})
+     */
+    public function deleteCard(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'server error',
+        ];
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $card= $this->mangoPayService->deactivateCard($data['cardId']);
+            if (!$card->Active) {
+                $jsonContent=[
+                    'error'=> false,
+                    'message'=> 'carte desactivé'
+                ];
+            }
+        }
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+
 
     /**
      * @Route("/payInCardDirect", methods={"POST"})
