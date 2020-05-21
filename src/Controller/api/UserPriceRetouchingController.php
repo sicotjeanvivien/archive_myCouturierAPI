@@ -60,7 +60,6 @@ class UserPriceRetouchingController extends AbstractController
         $retouches = [];
         foreach ($retouching as $retouche) {
             $userPriceRetouching = $this->userPriceRetouchingRepository->findOneBy(['Retouching' => $retouche, 'UserApp' => $userApp]);
-            dump($userPriceRetouching);
             $retouches[] = [
                 'id' => !empty($retouche->getId()) ? $retouche->getId() : '',
                 'CategoryRetouching' => !empty($retouche->getCategoryRetouching()->getType()) ? $retouche->getCategoryRetouching()->getType() : '',
@@ -95,27 +94,13 @@ class UserPriceRetouchingController extends AbstractController
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
 
-            $mangoBankAccount = $this->mangoPayService->setMangoBankAccount($userApp->getMangoUserId(), $userApp->getAddress(), $data['bankAccount']);
-            $jsonContent['message'] = $mangoBankAccount;
-            if (isset($mangoBankAccount->Errors)) {
-                $jsonContent = [
-                    'error' => true,
-                    'message' => $mangoBankAccount,
-                ];
-                $response->setContent(json_encode($jsonContent));
-                return $response;
-            }
-
-            $bankAccountList = json_decode($userApp->getMangoBankAccountId());
-            $bankAccountList[] = $mangoBankAccount->Id;
-
-
             $userApp
-                ->setMangoBankAccountId(json_encode($bankAccountList))
+                ->setLongitude($data['longitude'])
+                ->setLatitude($data['latitude'])
                 ->setActiveCouturier($data['activeCouturier']);
 
             foreach ($data['userRetouchingPrice'] as $retouche) {
-                if ($retouche['active']) {
+                if (isset($retouche['active']) && $retouche['active']) {
                     $retouching = $this->retouchingRepository->findOneBy(['id' => $retouche['id']]);
                     $countUserPriceRetouching = $this->userPriceRetouchingRepository->countUserPriceRetouching($userApp, $retouching);
                     $userPriceRetouching =  $this->userPriceRetouchingRepository->findOneBy(['UserApp' => $userApp, 'Retouching' => $retouching]);

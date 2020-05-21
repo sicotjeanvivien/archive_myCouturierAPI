@@ -152,6 +152,16 @@ class UserApp implements UserInterface
      */
     private $mangoBankAccountId;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $mangoKYCId;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $pushNotificationToken;
+
     public function __construct()
     {
         $this->userPriceRetouchings = new ArrayCollection();
@@ -576,6 +586,30 @@ class UserApp implements UserInterface
     public function setMangoBankAccountId(?string $mangoBankAccountId): self
     {
         $this->mangoBankAccountId = $mangoBankAccountId;
+
+        return $this;
+    }
+
+    public function getMangoKYCId(): ?string
+    {
+        return $this->mangoKYCId;
+    }
+
+    public function setMangoKYCId(?string $mangoKYCId): self
+    {
+        $this->mangoKYCId = $mangoKYCId;
+
+        return $this;
+    }
+
+    public function getPushNotificationToken(): ?string
+    {
+        return $this->pushNotificationToken;
+    }
+
+    public function setPushNotificationToken(?string $pushNotificationToken): self
+    {
+        $this->pushNotificationToken = $pushNotificationToken;
 
         return $this;
     }

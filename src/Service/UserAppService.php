@@ -21,28 +21,32 @@ class UserAppService
         ];
 
         $id = empty($data['id']) ? null : rtrim(ltrim($data['id']));
-        $firstname = rtrim(ltrim($data['firstname']));
-        $lastname = rtrim(ltrim($data['lastname']));
-        $bio = rtrim(ltrim($data['bio']));
-        $email = rtrim(ltrim($data['email']));
-        $emailConfirm = rtrim(ltrim($data['emailConfirm']));
+        $firstname = empty($data['firstname']) ? null : rtrim(ltrim( $data['firstname']));
+        $lastname = empty($data['lastname']) ? null : rtrim(ltrim($data['lastname']));
+        $bio = empty($data['bio']) ? null : rtrim(ltrim($data['bio']));
+        $email = empty($data['email']) ? null : rtrim(ltrim($data['email']));
+        $emailConfirm = empty($data['emailConfirm']) ? null : rtrim(ltrim($data['emailConfirm']));
 
-        if (empty($firstname) || empty($lastname) ||empty($bio) ) {
+        if (!isset($firstname)) {
             $error['error'] = true;
-            $error['message'] = $error['message'] . 'champs vide';
+            $error['message'] = $error['message'] . 'champs vide nom';
+        }
+        if (!isset($lastname)) {
+            $error['error'] = true;
+            $error['message'] = $error['message'] . 'champs vide prénon';
         }
         if (
-            empty($email) ||
+            !isset($email) ||
             stristr($email, '@') === FALSE ||
             ($this->userAppRepository->countUserByEmail($email)) > 0
-        ) {
-            $error['error'] = true;
-            $error['message'] = $error['message'] . ' email non valide';
-        }
-        if ($email !== $emailConfirm) {
-            $error['error'] = true;
-            $error['message'] = $error['message'] . 'les deux adresses emails ne correspondent pas';
-        }
+            ) {
+                $error['error'] = true;
+                $error['message'] = $error['message'] . ' email non valide';
+            }
+            if ($email !== $emailConfirm) {
+                $error['error'] = true;
+                $error['message'] = $error['message'] . 'les deux adresses emails ne correspondent pas';
+            }
         return $error;
     }
 

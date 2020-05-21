@@ -5,6 +5,7 @@
         "php": "^7.2.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "alymosul/exponent-server-sdk-php": "^1.2",
         "mangopay/php-sdk-v2": "^2.3",
         "nelmio/cors-bundle": "^2.0",
         "sensio/framework-extra-bundle": "^5.5",

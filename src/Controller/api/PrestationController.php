@@ -105,10 +105,7 @@ class PrestationController extends AbstractController
         $prestationHistory = $this->prestationHistoryRepository->findAllByPrestation($prestation);
         $message = $this->messageRepository->findAllByPrestation($prestation);
 
-        dump(!empty($prestation), !empty($prestationHistory), !empty($message));
-
         if ($request->headers->get('Content-Type') === 'application/json' && !empty($prestation)) {
-
             $jsonContent['prestation'] = [
                 'id' => $prestation->getId(),
                 'client' => $prestation->getClient()->getUsername(),

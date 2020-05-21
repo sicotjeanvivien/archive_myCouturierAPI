@@ -91,12 +91,15 @@ class SecurityController extends AbstractController
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
 
-            $valideDataAccount = $this->userAppService->validateDataAccount($data);
-            $validePassword = $this->userAppService->validateDataPassword($data);
+            $dataSignUp = $data['data'];
+
+            $valideDataAccount = $this->userAppService->validateDataAccount($dataSignUp);
+            $validePassword = $this->userAppService->validateDataPassword($dataSignUp);
 
             if (!$valideDataAccount['error'] && !$validePassword['error']) {
-                $user = $this->serializerInterface->deserialize($request->getContent(), UserApp::class, 'json');
-                $mangoUser = $this->mangoPayService->setMangoUser($data);
+                $user = new UserApp();
+                $mangoUser = $this->mangoPayService->setMangoUser($dataSignUp);
+
                 if (isset($mangoUser->Errors)) {
                     $jsonContent = [
                         'error' => true,
@@ -115,17 +118,21 @@ class SecurityController extends AbstractController
                     return $response;
                 }
                 $user
+                    ->setFirstname($dataSignUp['firstname'])
+                    ->setLastname($dataSignUp['lastname'])
+                    ->setEmail($dataSignUp['email'])
+                    ->setPushNotificationToken(isset($dataSignUp['expoPushToken']) ? $dataSignUp['expoPushToken'] : null)
                     ->setUsername($user->getFirstname() . ' ' . $user->getLastname()[0])
                     ->setRoles(['ROLE_USER'])
                     ->setApitoken($this->securityService->tokenGenerator())
                     ->setPrivateMode(false)
                     ->setCreationDate(new \DateTime('NOW'))
-                    ->setAddress($data['address'])
+                    ->setAddress($dataSignUp['address'])
                     ->setMangoUserId($mangoUser->Id)
                     ->setMangoWalletId($mangoWallet->Id)
-                    ->setLongitude(isset($data['longitude']) ? floatval($data['longitude']) : 0)
-                    ->setLatitude(isset($data['latitude']) ? floatval($data['latitude']) : 0)
-                    ->setPassword($this->passwordEncoder->encodePassword($user, $data['password']));
+                    ->setLongitude(isset($dataSignUp['longitude']) ? floatval($dataSignUp['longitude']) : 0)
+                    ->setLatitude(isset($dataSignUp['latitude']) ? floatval($dataSignUp['latitude']) : 0)
+                    ->setPassword($this->passwordEncoder->encodePassword($user, $dataSignUp['password']));
 
                 $this->em->persist($user);
                 $this->em->flush();
@@ -145,7 +152,6 @@ class SecurityController extends AbstractController
             return  $response;
         }
     }
-
 
     /**
      * @Route("/logout", name="app_logout", methods={"GET"})

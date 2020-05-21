@@ -176,9 +176,15 @@ class UserAppController extends AbstractController
     public function uploadImageProfil(Request $request)
     {
         $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'error server',
+        ];
         $userApp =  $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
         $userApp->setImageProfil(json_decode($request->getContent(), true));
         $this->em->flush();
+        $response->setContent(json_encode($jsonContent));
         return $response;
     }
 

@@ -31,7 +31,6 @@ class PrestationsService
 
     public function prestaClient($userApp)
     {
-        dump($userApp);
         $client = [];
         $client['inProgress'] = $this->prestationsRepository->findPrestaByClientState($userApp, Prestations::ACTIVE);
         $client['end'] = $this->prestationsRepository->findPrestaByClientState($userApp, Prestations::INACTIVE);
@@ -41,7 +40,6 @@ class PrestationsService
 
     public function prestaCouturier($userApp)
     {
-        dump($userApp);
         $couturier = [];
         $couturier['inProgress'] = $this->prestationsRepository->findPrestaByCouturierState($userApp, Prestations::ACTIVE);
         $couturier['end'] = $this->prestationsRepository->findPrestaByCouturierState($userApp, Prestations::INACTIVE);

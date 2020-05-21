@@ -72,7 +72,6 @@ class MangoPayController extends AbstractController
             'message' => 'server error',
         ];
         $user = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-        dump($this->mangoPayService->listCardForUser($user->getMangoUserId()));
         $jsonContent['listCard'] = $this->mangoPayService->listCardForUser($user->getMangoUserId());
 
         $response->setContent(json_encode($jsonContent));
@@ -91,7 +90,6 @@ class MangoPayController extends AbstractController
             'message' => 'server error',
         ];
         $user = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-        dump($this->mangoPayService->listBankAccounts($user->getMangoUserId()));
         $jsonContent['bankAccounts'] = $this->mangoPayService->listBankAccounts($user->getMangoUserId());
 
         $response->setContent(json_encode($jsonContent));
@@ -150,12 +148,11 @@ class MangoPayController extends AbstractController
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-            $bankAccount = $this->mangoPayService->deactivateBankAccount($userApp->getMangoUserId() ,$data['bankAccountId']);
-            dump($bankAccount);
+            $bankAccount = $this->mangoPayService->deactivateBankAccount($userApp->getMangoUserId(), $data['bankAccountId']);
             if (!$bankAccount->Active) {
-                $jsonContent=[
-                    'error'=> false,
-                    'message'=> 'carte desactivé'
+                $jsonContent = [
+                    'error' => false,
+                    'message' => 'carte desactivé'
                 ];
             }
         }
@@ -211,7 +208,7 @@ class MangoPayController extends AbstractController
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
-   
+
     /**
      * @Route("/card", methods={"DELETE"})
      */
@@ -224,19 +221,17 @@ class MangoPayController extends AbstractController
             'message' => 'server error',
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
-            $card= $this->mangoPayService->deactivateCard($data['cardId']);
+            $card = $this->mangoPayService->deactivateCard($data['cardId']);
             if (!$card->Active) {
-                $jsonContent=[
-                    'error'=> false,
-                    'message'=> 'carte desactivé'
+                $jsonContent = [
+                    'error' => false,
+                    'message' => 'carte desactivé'
                 ];
             }
         }
         $response->setContent(json_encode($jsonContent));
         return $response;
     }
-
-
 
     /**
      * @Route("/payInCardDirect", methods={"POST"})
@@ -314,7 +309,6 @@ class MangoPayController extends AbstractController
             'message' => 'server error',
         ];
         $user = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
-        dump($this->mangoPayService->getWallet($user->getMangoWalletId()));
 
         $jsonContent['wallet'] = $this->mangoPayService->getWallet($user->getMangoWalletId());
         $response->setContent(json_encode($jsonContent));
@@ -341,7 +335,7 @@ class MangoPayController extends AbstractController
             $debitAmout = $data['debitAmount'];
             $payOut = $this->mangoPayService->payOutBankWire($mangoUserId, $mangoWalletId, $debitAmout, $mangoBankAccountId);
 
-            $jsonContent['payOut']= $payOut;
+            $jsonContent['payOut'] = $payOut;
 
             if ($payOut->Status === \MangoPay\PayOutStatus::Succeeded) {
                 $jsonContent = [
@@ -350,6 +344,73 @@ class MangoPayController extends AbstractController
                 ];
             }
         }
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/KYC", methods={"POST"})
+     */
+    public function create(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'server error',
+        ];
+
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $file = $data['file'];
+            $type = "IDENTITY_PROOF";
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+            if (!empty($userApp->getMangoKYCId())) {
+                $mangoPayKYCId = $userApp->getMangoKYCId();
+            }else {
+                $jsonContent['boo'] = '$result';
+                $mangoPayKYC = $this->mangoPayService->createKYCDocument($userApp->getMangoUserId(), $type);
+                $jsonContent['kyc']= $mangoPayKYC;
+                $userApp->setMangoKYCId($mangoPayKYC->Id);
+                $this->em->flush();
+                $mangoPayKYCId = $mangoPayKYC->Id;
+            }
+            $result = $this->mangoPayService->createKYCpage($userApp->getMangoUserId(), $mangoPayKYCId, $file);
+            $jsonContent['boo'] = $result;
+            if (!empty($result['errors'])) {
+                $jsonContent = [
+                    'error' => true,
+                    'message' => $result['errors']["File"],
+                ];
+            }
+            
+        }
+
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
+     * @Route("/KYC", methods={"PUT"})
+     */
+    public function validationAsked(Request $request)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => true,
+            'message' => 'server error',
+        ];
+
+        if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
+            $KYCDocument = $this->mangoPayService->validationAsked($userApp->getMangoUserId(), $userApp->getMangoKYCId());
+            $jsonContent = [
+                'error' => false,
+                'message' => 'server error',
+                'KYCDocument' => $KYCDocument
+            ];
+        }
+
         $response->setContent(json_encode($jsonContent));
         return $response;
     }

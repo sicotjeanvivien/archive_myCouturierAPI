@@ -35,9 +35,6 @@ class RetouchingController extends AbstractController
 
         $json = $this->retouchingRepository->findAllRetouche();
 
-        dump($json);
-
-
         $jsonContent = [
             'error'=>false,
             'retouches' => $json

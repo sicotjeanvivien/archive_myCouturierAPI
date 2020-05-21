@@ -22,7 +22,6 @@ class MessageService
 
     public function set($message, $data, $author)
     {
-        dump($message, $data, $author);
         $author =  $this->userAppRepository->findOneBy(['apitoken' => $author]);
         $prestation = $this->prestationsRepository->findOneBy(['id' => $data['prestation']]);
         if (

@@ -290,9 +290,56 @@ class MangoPayService
         try {
             $bankAccount = $this->mangoPayApi->Users->GetBankAccount($mangoUserId, $mangoBankAccountId);
             $bankAccount->Active = false;
-            dump('he');
             $result = $this->mangoPayApi->Users->UpdateBankAccount($mangoUserId, $bankAccount);
-            dump('hel');
+            return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * Create Document KYC
+     * @return KYCDocument $KYCDocument
+     */
+    public function createKYCDocument($mangoUserId, $type)
+    {
+        try {
+            $KYCDocument = new \MangoPay\KycDocument();
+            $KYCDocument->Type = $type;
+            $result = $this->mangoPayApi->Users->CreateKycDocument($mangoUserId, $KYCDocument);
+            return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * Create KYC page
+     * @return KYCpage $KYCpage
+     */
+    public function createKYCpage($mangoUserId, $KYVDocumentId, $file)
+    {
+        try {
+            $KYCpage = new \MangoPay\KycPage();
+            $KYCpage->file = $file;
+            $result = $this->mangoPayApi->Users->CreateKycPage($mangoUserId, $KYVDocumentId, $KYCpage);
+            return $result;
+        } catch (MangoPay\Libraries\ResponseException $e) {
+            return $e->GetErrorDetails();
+        }
+    }
+
+    /**
+     * Validation Asked 
+     * @return KYCDcument $KYCDocument
+     */
+    public function validationAsked($mangoUserId, $KYVDocumentId)
+    {
+        try {
+            $KYCDocument = new \MangoPay\KycDocument();
+            $KYCDocument->Id = $KYVDocumentId;
+            $KYCDocument->Status = \MangoPay\KycDocumentStatus::ValidationAsked;
+            $result = $this->mangoPayApi->Users->UpdateKycDocument($mangoUserId, $KYCDocument);
             return $result;
         } catch (MangoPay\Libraries\ResponseException $e) {
             return $e->GetErrorDetails();
