@@ -54,7 +54,7 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         return $query->getSingleScalarResult();
     }
 
-    public function findCouturierBy($longitude, $latitude, $retouche, $radius)
+    public function findCouturierBy($longitude, $latitude, $retouche, $radius, $userId)
     {
         $entityManager = $this->getEntityManager();
 
@@ -63,7 +63,8 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
             FROM App\Entity\UserApp a
             JOIN a.userPriceRetouchings ur
             JOIN ur.Retouching r 
-            WHERE a.activeCouturier = true AND r.type = :retouche  
+            JOIN ur.UserApp ua
+            WHERE a.activeCouturier = true AND r.type = :retouche AND ua.id <> :userId 
             AND (a.longitude BETWEEN (:longitude - :radius) AND (:longitude + :radius)) 
             AND (a.latitude BETWEEN (:latitude - :radius)  AND (:latitude + :radius))
         "
@@ -72,6 +73,7 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
             'latitude' => $latitude,
             'radius' => $radius,
             'retouche' => $retouche,
+            'userId' => $userId
         ]);
 
         // returns an array of Product objects
@@ -101,16 +103,16 @@ class UserAppRepository extends ServiceEntityRepository implements PasswordUpgra
         return $query->getResult();
     }
 
-    public function countUserByEmail($email)
+    public function countUserByEmail($email, $userId)
     {
         $entityManager = $this->getEntityManager();
 
         $query = $entityManager->createQuery(
             "SELECT count(a)
             FROM App\Entity\UserApp a
-            WHERE a.email = :email  
+            WHERE a.email = :email AND a.id = :userId
         "
-        )->setParameter('email',$email);
+        )->setParameters(['email' => $email, 'userId' => $userId]);
 
         // returns an array of Product objects
         return $query->getSingleScalarResult();

@@ -52,6 +52,23 @@ class CommentaryController extends AbstractController
     }
 
     /**
+     * @Route("/{id}", methods={"GET"})
+     */
+    public function showBy($id)
+    {
+        $response = new Response();
+        $response->headers->set('Content-Type', 'application/json');
+        $jsonContent = [
+            'error' => false,
+            'message' => 'error server',
+        ];
+        $couturier = $this->userAppRepository->findOneBy(["id"=>$id]);
+        $jsonContent = $this->commentaryRepository->findBy(['coutuier' => $couturier]);
+        $response->setContent(json_encode($jsonContent));
+        return $response;
+    }
+
+    /**
      * @Route("/", methods={"POST"})
      */
     public function create(Request $request)

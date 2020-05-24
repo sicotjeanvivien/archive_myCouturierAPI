@@ -4,6 +4,9 @@ namespace App\Service;
 
 class SecurityService
 {
+
+    private $emp = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
     public function tokenGenerator()
     {
         $token = bin2hex(random_bytes(64));
@@ -14,7 +17,7 @@ class SecurityService
     public function passwordGenerator()
     {
         $password = '';
-        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $keyspace = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $max = mb_strlen($keyspace, '8bit') - 1;
         for ($i = 0; $i < 8; ++$i) {
             $password .= $keyspace[random_int(0, $max)];
@@ -26,7 +29,7 @@ class SecurityService
     public function codeConfirm()
     {
         $code = '';
-        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $keyspace = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $max = mb_strlen($keyspace, '8bit') - 1;
         for ($i = 0; $i < 4; ++$i) {
             $code .= $keyspace[random_int(0, $max)];

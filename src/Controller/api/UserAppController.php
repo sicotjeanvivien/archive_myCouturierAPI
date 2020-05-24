@@ -62,13 +62,12 @@ class UserAppController extends AbstractController
             'message' => 'error server',
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
-
             $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
             $dataValide = $this->userAppService->validateDataAccount($data);
-
             if (!$dataValide['error']) {
                 $userApp
                     ->setFirstname(empty($data['firstname']) ? $userApp->getFirstname() : $data['firstname'])
+                    ->setUsername($userApp->getFirstname() . ' ' . $userApp->getLastname()[0])
                     ->setLastname(empty($data['lastname']) ? $userApp->getLastname() :  $data['lastname'])
                     ->setBio(empty($data['bio'] ? $userApp->getBio() : $data['bio']))
                     ->setEmail(empty($data['email']) ? $userApp->getEmail() : $data['email']);
@@ -209,9 +208,10 @@ class UserAppController extends AbstractController
             $latitude = !empty($data['latitude']) ? $data['latitude'] : 2.3336696;
             $retouche = !empty($data['search']) ? $data['search'] : 'noSelect';
             $dataCouturier = [];
+            $userApp = $this->userAppRepository->findOneBy(['apitoken' => $request->headers->get('X-AUTH-TOKEN')]);
 
             if ($retouche === 'noSelect') {
-                $couturierResultQuery = $this->userAppRepository->findAllCouturierBy($longitude, $latitude, $radius);
+                $couturierResultQuery = $this->userAppRepository->findAllCouturierBy($longitude, $latitude, $radius, $userApp->getId());
                 foreach ($couturierResultQuery as $user) {
                     $detailRetouche = $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
                     $dataCouturier[] = [
@@ -225,7 +225,7 @@ class UserAppController extends AbstractController
                     ];
                 }
             } else {
-                $couturierResultQuery = $this->userAppRepository->findCouturierBy($longitude, $latitude, $retouche, $radius);
+                $couturierResultQuery = $this->userAppRepository->findCouturierBy($longitude, $latitude, $retouche, $radius, $userApp->getId());
                 foreach ($couturierResultQuery as $user) {
                     $detailRetouche = $this->userPriceRetouchingRepository->findPriceBy($user, $retouche);
                     $dataCouturier[] = [

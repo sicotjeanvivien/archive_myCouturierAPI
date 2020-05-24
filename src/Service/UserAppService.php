@@ -14,16 +14,15 @@ class UserAppService
     public function validateDataAccount($data)
     {
 
-
         $error = [
             'error' => false,
             'message' => '',
         ];
 
-        $id = empty($data['id']) ? null : rtrim(ltrim($data['id']));
+        $id = empty($data['id']) ? 0 : rtrim(ltrim($data['id']));
         $firstname = empty($data['firstname']) ? null : rtrim(ltrim( $data['firstname']));
         $lastname = empty($data['lastname']) ? null : rtrim(ltrim($data['lastname']));
-        $bio = empty($data['bio']) ? null : rtrim(ltrim($data['bio']));
+        $bio = !empty($data['bio']) ? rtrim(ltrim($data['bio'])) : null;
         $email = empty($data['email']) ? null : rtrim(ltrim($data['email']));
         $emailConfirm = empty($data['emailConfirm']) ? null : rtrim(ltrim($data['emailConfirm']));
 
@@ -35,10 +34,11 @@ class UserAppService
             $error['error'] = true;
             $error['message'] = $error['message'] . 'champs vide prénon';
         }
+        // dump($this->userAppRepository->countUserByEmail($email, $id));
         if (
             !isset($email) ||
             stristr($email, '@') === FALSE ||
-            ($this->userAppRepository->countUserByEmail($email)) > 0
+            ($this->userAppRepository->countUserByEmail($email, $id)) > 0
             ) {
                 $error['error'] = true;
                 $error['message'] = $error['message'] . ' email non valide';

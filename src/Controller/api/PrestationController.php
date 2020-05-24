@@ -14,6 +14,7 @@ use App\Repository\StatutHistoryRepository;
 use App\Repository\UserAppRepository;
 use App\Repository\UserPriceRetouchingRepository;
 use App\Service\MangoPayService;
+use App\Service\NotificationPushService;
 use App\Service\PrestationsService;
 use App\Service\SecurityService;
 use DateTime;
@@ -37,9 +38,11 @@ class PrestationController extends AbstractController
     private $messageRepository;
     private $securityService;
     private $mangoPayService;
+    private $notificationPushService;
     private $em;
 
     public function __construct(
+        NotificationPushService $notificationPushService,
         StatutHistoryRepository $statutHistoryRepository,
         UserAppRepository $userAppRepository,
         PrestationsRepository $prestationsRepository,
@@ -55,6 +58,7 @@ class PrestationController extends AbstractController
         $this->em = $entityManagerInterface;
         $this->securityService = $securityService;
         $this->mangoPayService = $mangoPayService;
+        $this->notificationPushService = $notificationPushService;
         $this->statutHistoryRepository = $statutHistoryRepository;
         $this->prestationService = $prestationService;
         $this->userAppRepository = $userAppRepository;
@@ -161,6 +165,8 @@ class PrestationController extends AbstractController
                     ->setPrestation($prestation);
                 $this->em->persist($prestationHistory);
                 $this->em->flush();
+                $expoPush = $this->notificationPushService->pushNewDemande($userPriceRetouching->getUserApp()->getPushNotificationToken());
+                $jsonContent['notification'] = $expoPush;
                 $jsonContent['error'] = false;
                 $jsonContent['message'] = 'Votre demande a été envoyée au couturier.';
             } else {
@@ -186,6 +192,11 @@ class PrestationController extends AbstractController
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
             $prestation = $this->prestationsRepository->findOneBy(['id' => $data['id']]);
             $prestation->setAccept($data['accept'] ? true : false);
+            if ($prestation->getAccept()) {
+                $expoPush = $this->notificationPushService->pushAccept($prestation->getClient()->getPushNotificationToken());
+            }if (!$prestation->getAccept()) {
+                $expoPush = $this->notificationPushService->pushDecline($prestation->getClient()->getPushNotificationToken());
+            }
             $prestation->setState($data['accept'] ? Prestations::ACTIVE : Prestations::INACTIVE);
             $statut = $this->statutHistoryRepository->findOneBy(['statut' => StatutHistory::ACCEPT]);
             $prestationHistory = new PrestationHistory();
@@ -195,6 +206,7 @@ class PrestationController extends AbstractController
                 ->setPrestation($prestation);
             $this->em->persist($prestationHistory);
             $this->em->flush();
+            $jsonContent['notification'] = $expoPush;
             $jsonContent['error'] = false;
             $jsonContent['message'] = $data['accept'] ? 'Prestation acceptée.' : 'Prestation déclinée.';
         }
@@ -265,7 +277,7 @@ class PrestationController extends AbstractController
                     $this->em->flush();
 
                     $jsonContent = [
-                        'error'=> false,
+                        'error' => false,
                         'message' => 'code valide',
                         'transfer' => $mangoPayTransfert
                     ];
