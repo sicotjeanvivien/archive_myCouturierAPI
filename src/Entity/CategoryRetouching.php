@@ -28,6 +28,11 @@ class CategoryRetouching
      */
     private $retouchings;
 
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $showHidden;
+
     public function __construct()
     {
         $this->retouchings = new ArrayCollection();
@@ -77,6 +82,18 @@ class CategoryRetouching
                 $retouching->setCategoryRetouching(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getShowHidden(): ?bool
+    {
+        return $this->showHidden;
+    }
+
+    public function setShowHidden(?bool $showHidden): self
+    {
+        $this->showHidden = $showHidden;
 
         return $this;
     }

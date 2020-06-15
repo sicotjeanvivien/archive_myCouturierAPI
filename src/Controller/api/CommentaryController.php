@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @Route("/api/Commentary")
+ * @Route("/api/commentary")
  */
 
 class CommentaryController extends AbstractController
@@ -58,12 +58,24 @@ class CommentaryController extends AbstractController
     {
         $response = new Response();
         $response->headers->set('Content-Type', 'application/json');
+
+        $couturier = $this->userAppRepository->findOneBy(["id" => $id]);
+        $commentaryData = $this->commentaryRepository->findBy(['couturier' => $couturier]);
+        $commentaries = [];
+        foreach ($commentaryData as $key => $value) {
+            $commentaries[] = [
+                "id" => $value->getId(),
+                "authorImg" => $value->getAuthor()->getImageProfil(),
+                "couturier" => $value->getCouturier()->getUsername(),
+                "message" => $value->getMessage(),
+                "rating" => $value->getRating()
+            ];
+        }
         $jsonContent = [
             'error' => false,
             'message' => 'error server',
+            'commentary' =>  $commentaries,
         ];
-        $couturier = $this->userAppRepository->findOneBy(["id"=>$id]);
-        $jsonContent = $this->commentaryRepository->findBy(['coutuier' => $couturier]);
         $response->setContent(json_encode($jsonContent));
         return $response;
     }

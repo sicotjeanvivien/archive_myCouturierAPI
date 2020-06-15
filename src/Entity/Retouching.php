@@ -33,6 +33,21 @@ class Retouching
      */
     private $description;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $code;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $supplyQuestion;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $supplyOption;
+
     public function __construct()
     {
        
@@ -75,6 +90,42 @@ class Retouching
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getCode(): ?string
+    {
+        return $this->code;
+    }
+
+    public function setCode(?string $code): self
+    {
+        $this->code = $code;
+
+        return $this;
+    }
+
+    public function getSupplyQuestion(): ?string
+    {
+        return $this->supplyQuestion;
+    }
+
+    public function setSupplyQuestion(?string $supplyQuestion): self
+    {
+        $this->supplyQuestion = $supplyQuestion;
+
+        return $this;
+    }
+
+    public function getSupplyOption(): ?string
+    {
+        return $this->supplyOption;
+    }
+
+    public function setSupplyOption(?string $supplyOption): self
+    {
+        $this->supplyOption = $supplyOption;
 
         return $this;
     }

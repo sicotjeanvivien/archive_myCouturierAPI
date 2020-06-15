@@ -22,7 +22,7 @@ class RetouchingRepository extends ServiceEntityRepository
     public function findAllRetouche()
     {
         $query = $this->getEntityManager()->createQuery(
-            "SELECT r.id, r.type, r.description, cr.type as category
+            "SELECT r.id, r.type, r.description, r.code, cr.type as category, r.supplyQuestion, r.supplyOption
             FROM App\Entity\Retouching r
             JOIN r.CategoryRetouching cr
             "

@@ -240,10 +240,13 @@ class UserAppController extends AbstractController
                             // 'test'=> $detailRetouche->getPriceShowClient() ,
                             'id' => !empty($detailRetouche->getId()) ? $detailRetouche->getId() : '',
                             'priceShowClient' => !empty($detailRetouche->getPriceShowClient()) ? $detailRetouche->getPriceShowClient() : '',
+                            'supplyCost' => !empty($detailRetouche->getSupplyCost()) ? $detailRetouche->getSupplyCost() : 0,
                             'tool' => !empty($detailRetouche->getTool()) ? $detailRetouche->getTool() : '',
                             'deadline' => !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
                             'commitment' => !empty($detailRetouche->getCommitment()) ? $detailRetouche->getCommitment() : '',
                             'deadline' => !empty($detailRetouche->getDeadline()) ? $detailRetouche->getDeadline() : '',
+                            'supplyQuestion'=> !empty($detailRetouche->getRetouching())? $detailRetouche->getRetouching()->getSupplyQuestion() :'', 
+                            'supplyOption'=> !empty($detailRetouche->getRetouching())? $detailRetouche->getRetouching()->getSupplyOption() :'',
                             'type' => $retouche,
                         ]
 

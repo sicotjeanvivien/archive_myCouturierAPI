@@ -64,6 +64,8 @@ class UserPriceRetouchingController extends AbstractController
                 'id' => !empty($retouche->getId()) ? $retouche->getId() : '',
                 'CategoryRetouching' => !empty($retouche->getCategoryRetouching()->getType()) ? $retouche->getCategoryRetouching()->getType() : '',
                 'type' => !empty($retouche->getType()) ? $retouche->getType() : '',
+                'code' => !empty($retouche)? $retouche->getCode(): '',
+                'supplyQuestion'=> !empty($retouche)? $retouche->getSupplyQuestion() : '',
                 'description' => !empty($retouche->getDescription()) ? $retouche->getDescription() : '',
                 'supplyCost'=>!empty($userPriceRetouching) ? $userPriceRetouching->getSupplyCost():'',
                 'daedline'=>!empty($userPriceRetouching) ?$userPriceRetouching->getDeadline():'',
