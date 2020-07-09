@@ -90,6 +90,7 @@ class CommentaryController extends AbstractController
         $jsonContent = [
             'error' => true,
             'message' => 'error server',
+            'request'=> $request->getContent()
         ];
         if (!empty($data = json_decode($request->getContent(), true)) && $request->headers->get('Content-Type') === 'application/json') {
 
@@ -101,7 +102,7 @@ class CommentaryController extends AbstractController
             $commentary
                 ->setRating($data['rating'])
                 ->setCouturier($couturier)
-                ->setMessage($data['message'])
+                ->setMessage($data['comment'])
                 ->setAuthor($userApp);
             $this->em->persist($commentary);
             $this->em->flush();
